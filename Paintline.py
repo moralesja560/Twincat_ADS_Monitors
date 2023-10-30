@@ -16,6 +16,7 @@ from datetime import datetime
 load_dotenv()
 token_Tel = os.getenv('TOK_EN_BOT')
 Jorge_Morales = os.getenv('JORGE_MORALES')
+Paintgroup = os.getenv('PAINTLINE')
 
 def resource_path(relative_path):
     """ Get absolute path to resource, works for dev and for PyInstaller """
@@ -58,7 +59,7 @@ def state_recover():
 		pass
 	else:
 		with open(ruta_state,"w+") as f:
-			f.write(f"{int(0)},{int(0)}")		
+			f.write(f"{int(0)},{int(0)},{int(0)},{int(0)}")		
 
 	with open(resource_path("images/last_state.csv")) as file:
 		type(file)
@@ -67,17 +68,19 @@ def state_recover():
 		for row in csvreader:
 			rows2.append(row)
 		
-		fmb46_state = int(rows2[0][0])
+		contador_h = int(rows2[0][0])
 		hora = int(rows2[0][1])
+		contador_d = int(rows2[0][2])
+		day = int(rows2[0][2])
 
-		return fmb46_state,hora
+		return contador_h,hora,contador_d,day
 
-def state_save(fmb46_state,hora):
+def state_save(fmb46_state,hora,contador_d):
 	ruta_state = resource_path("images/last_state.csv")
 
 	with open(ruta_state, "w+") as file_object:
 
-		file_object.write(f"{fmb46_state},{hora}")
+		file_object.write(f"{fmb46_state},{hora},{contador_d}")
 
 ##--------------------the thread itself--------------#
 
@@ -90,7 +93,7 @@ class hilo1(threading.Thread):
 	#the actual thread function
 	def run(self):
 		#arranca los datos guardados
-		contador_gancheras,hora = state_recover()
+		contador_gancheras,hora,contador_gancheras_day,day = state_recover()
 		state_hanger = False
 
 		#inicialización de PLC
@@ -114,19 +117,25 @@ class hilo1(threading.Thread):
 					state_hanger = cell1
 					if cell1 == True:
 						contador_gancheras +=1
+						contador_gancheras_day +=1
 						print("guardado")
-						state_save(contador_gancheras,hora)
-						#if (contador_gancheras % 100) == 0:
-						#	send_message(Jorge_Morales,quote(f"Reporte de gancheras: {contador_gancheras}"),token_Tel)
+						state_save(contador_gancheras,hora,contador_gancheras_day)
 				#hourly report
 				now = datetime.now()
 				if hora != int(now.strftime("%H")):
-					if int(hora) <= 20 and int(hora) >= 7:
-						send_message(Jorge_Morales,quote(f"Reporte de Hora: {hora}-{hora+1}: {contador_gancheras}"),token_Tel)
+					send_message(Jorge_Morales,quote(f"Reporte de Hora: {hora}-{hora+1}: {contador_gancheras}"),token_Tel)
 					#reset a la variable
 					contador_gancheras = 0
 					#se actualiza la hora
 					hora = int(now.strftime("%H"))
+					
+				if day != int(now.strftime("%d")):
+					send_message(Jorge_Morales,quote(f"Reporte del día {day}: {contador_gancheras_day}"),token_Tel)
+					#reset a la variable
+					contador_gancheras_day = 0
+					#se actualiza la hora
+					day = int(now.strftime("%d"))
+				
 				
 
 			if self._stop_event.is_set():
