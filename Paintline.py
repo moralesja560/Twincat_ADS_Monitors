@@ -12,6 +12,7 @@ import datetime
 import csv
 import pandas as pd
 from datetime import datetime
+import numpy as np
 
 load_dotenv()
 token_Tel = os.getenv('TOK_EN_BOT')
@@ -42,7 +43,12 @@ def send_message(user_id, text,token):
 	#resp = requests.get(url)
 	#hacemos la petición
 	try:
-		respuesta  = urlopen(Request(url))
+		ruta_state = resource_path("images/tele.txt")
+		file_exists = os.path.exists(ruta_state)
+		if file_exists == False:
+			return
+		else:
+			respuesta  = urlopen(Request(url))
 	except Exception as e:
 		print(f"Ha ocurrido un error al enviar el mensaje: {e}")
 	else:
@@ -123,14 +129,14 @@ class hilo1(threading.Thread):
 				#hourly report
 				now = datetime.now()
 				if hora != int(now.strftime("%H")):
-					send_message(Jorge_Morales,quote(f"Reporte de Hora: {hora}-{hora+1}: {contador_gancheras}"),token_Tel)
+					send_message(Paintgroup,quote(f"Reporte de Hora: {hora}-{hora+1}: {contador_gancheras}"),token_Tel)
 					#reset a la variable
 					contador_gancheras = 0
 					#se actualiza la hora
 					hora = int(now.strftime("%H"))
 					
 				if day != int(now.strftime("%d")):
-					send_message(Jorge_Morales,quote(f"Reporte del día {day}: {contador_gancheras_day}"),token_Tel)
+					send_message(Paintgroup,quote(f"Reporte del día {day}: {contador_gancheras_day}"),token_Tel)
 					#reset a la variable
 					contador_gancheras_day = 0
 					#se actualiza la hora
