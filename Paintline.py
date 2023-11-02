@@ -77,16 +77,16 @@ def state_recover():
 		contador_h = int(rows2[0][0])
 		hora = int(rows2[0][1])
 		contador_d = int(rows2[0][2])
-		day = int(rows2[0][2])
+		day = int(rows2[0][3])
 
 		return contador_h,hora,contador_d,day
 
-def state_save(fmb46_state,hora,contador_d):
+def state_save(fmb46_state,hora,contador_d,day):
 	ruta_state = resource_path("images/last_state.csv")
 
 	with open(ruta_state, "w+") as file_object:
 
-		file_object.write(f"{fmb46_state},{hora},{contador_d}")
+		file_object.write(f"{fmb46_state},{hora},{contador_d},{day}")
 
 ##--------------------the thread itself--------------#
 
@@ -125,7 +125,7 @@ class hilo1(threading.Thread):
 						contador_gancheras +=1
 						contador_gancheras_day +=1
 						print("guardado")
-						state_save(contador_gancheras,hora,contador_gancheras_day)
+						state_save(contador_gancheras,hora,contador_gancheras_day,day)
 				#hourly report
 				now = datetime.now()
 				if hora != int(now.strftime("%H")):
