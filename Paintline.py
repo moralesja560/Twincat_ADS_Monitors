@@ -116,7 +116,6 @@ class hilo1(threading.Thread):
 				plc.close()
 				break
 			else:
-
 				if state_hanger != cell1:		
 					write_log(cell1)
 					print(cell1)
