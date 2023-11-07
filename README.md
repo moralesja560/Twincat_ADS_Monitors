@@ -5,7 +5,8 @@ Here at *** Mexico (censored for privacy. Code is public, but not my employer in
 This is a group of python files that you can use to test Python ADS communication with your PLC. If you can download the PLC code, then you're good to go with PYADS.
 
 ### A note to self: How to activate virtual environments
-python -m venv nameofvirtualenvironment
+python -m venv (.)nameofvirtualenvironment (DO not forget the dot)
 select the python interpreter inside the virtual environment
+Run the activate.ps1
 close and reopen the terminal.
 work.
