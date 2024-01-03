@@ -351,7 +351,7 @@ def aux_PLC_comms_4(plc_address_aux,plc_netid_aux):
 def weather_data(PLC_5_queue_i,PLC_5_queue_o):
 	print('++++++++++++++++++++++++++++++++++ Weather_Report: Running')
 	# base URL
-	#lat=26.8802393&lon=-101.4611757&appid=6d50895f204f425bae667859e605045a
+	#lat=26.8802393&lon=-101.4611757
 	BASE_URL = "http://api.openweathermap.org/data/2.5/weather?"
 	#LAT
 	#CITY = "Saltillo"
