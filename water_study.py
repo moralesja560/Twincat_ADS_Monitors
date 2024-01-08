@@ -8,10 +8,11 @@ from datetime import datetime
 import requests
 import json
 import pandas as pd
-from dotenv import load_dotenv
+from dotenv.main import load_dotenv
 
 load_dotenv()
 token_Tel = os.getenv('API_KEY')
+token_Tel2 = os.getenv('API_KEY2')
 
 def resource_path(relative_path):
  """ Get absolute path to resource, works for dev and for PyInstaller """
@@ -32,7 +33,7 @@ def My_Documents(location):
 	return temp_docs
 
 
-def write_log(i_gwk_temp,i_part_number,i_part_number2,i_part_number3,status1,status2,status3,i_temp_torre,i_bomba1,i_bomba2,i_temp,i_humidity,i_pressure):
+def write_log(i_gwk_temp,i_part_number,i_part_number2,i_part_number3,status1,status2,status3,i_temp_torre,i_bomba1,i_bomba2,i_temp,i_humidity,i_speed_1,i_speed_2,i_speed_3):
 	now = datetime.now()
 	dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
 	#print("date and time =", dt_string)	
@@ -46,7 +47,7 @@ def write_log(i_gwk_temp,i_part_number,i_part_number2,i_part_number3,status1,sta
 	else:
 		pd_log = pd.DataFrame(pd_dict)
 
-	new_row = {'timestamp' : [dt_string], 'temp_adentro' : [i_gwk_temp], 'ITW1_PN' : [i_part_number], 'ITW2_PN' : [i_part_number2], 'ITW3_ON' : [i_part_number3], 'ITW1_Auto' : [status1], 'ITW2_Auto' : [status2], 'ITW3_Auto' : [status3],'Temp_Torre' : [i_temp_torre], 'Bomba_1' : [i_bomba1], 'Bomba_2' : [i_bomba2], 'Clima_Temp' : [i_temp], 'Clima_Humedad' : [i_humidity], 'Clima_Presion' : [i_pressure]}
+	new_row = {'timestamp' : [dt_string], 'temp_adentro' : [i_gwk_temp], 'ITW1_PN' : [i_part_number], 'ITW2_PN' : [i_part_number2], 'ITW3_PN' : [i_part_number3], 'ITW1_Auto' : [status1], 'ITW2_Auto' : [status2], 'ITW3_Auto' : [status3],'Temp_Torre' : [i_temp_torre], 'Bomba_1' : [i_bomba1], 'Bomba_2' : [i_bomba2], 'Clima_Temp' : [i_temp], 'Clima_Humedad' : [i_humidity], 'ITW1_Spd' : [i_speed_1], 'ITW2_Spd' : [i_speed_2], 'ITW3_Spd' : [i_speed_3]}
 	new_row_pd = pd.DataFrame(new_row)
 	pd_concat = pd.concat([pd_log,new_row_pd])
 	pd_concat.to_csv(pd_ruta,index=False)
@@ -76,12 +77,13 @@ def PLC_comms1(PLC_1_queue_i,PLC_1_queue_o,plc1_ip,plc1_netid):
 		gwk_temp = plc1.get_handle('.GWK_Tank1_Temperature_d_degree')
 		part_number = plc1.get_handle('.TP_IW_Recipe_name')
 		status_handle = plc1.get_handle('.Running_Automatic_SCADA')
+		speed_handle = plc1.get_handle('.TP_IW_Einlauf_Drehzahl')
 
 	
 	except Exception as e:
 			print(f"Starting error: {e}")
 			time.sleep(5)
-			plc1,gwk_temp,part_number,status_handle = aux_PLC_comms(plc1_ip,plc1_netid)
+			plc1,gwk_temp,part_number,status_handle,speed_handle = aux_PLC_comms(plc1_ip,plc1_netid)
 	while True:
 		# get a unit of work
 		try:
@@ -96,6 +98,7 @@ def PLC_comms1(PLC_1_queue_i,PLC_1_queue_o,plc1_ip,plc1_netid):
 			plc1.release_handle(gwk_temp)
 			plc1.release_handle(part_number)
 			plc1.release_handle(status_handle)
+			plc1.release_handle(speed_handle)
 			print(f"handles1 released")
 			plc1.close()
 			PLC_1_queue_i.task_done()
@@ -107,15 +110,16 @@ def PLC_comms1(PLC_1_queue_i,PLC_1_queue_o,plc1_ip,plc1_netid):
 			plc1_num_parte= plc1.read_by_name("", plc_datatype=pyads.PLCTYPE_STRING,handle=part_number)
 			plc1_temp= plc1.read_by_name("", plc_datatype=pyads.PLCTYPE_UINT,handle=gwk_temp)
 			plc1_stat= plc1.read_by_name("", plc_datatype=pyads.PLCTYPE_BOOL,handle=status_handle)
+			plc1_spd= plc1.read_by_name("", plc_datatype=pyads.PLCTYPE_UINT,handle=speed_handle)
 			
 			# send the data over the queue
-			PLC_1_queue_o.put((plc1_temp,plc1_num_parte,plc1_stat))
+			PLC_1_queue_o.put((plc1_temp,plc1_num_parte,plc1_stat,plc1_spd))
 			time.sleep(4)
 
 
 		except Exception as e:
 			print(f"Could not update in PLC: error {e}")
-			plc1,gwk_temp,part_number,status_handle = aux_PLC_comms(plc1_ip,plc1_netid)
+			plc1,gwk_temp,part_number,status_handle,speed_handle = aux_PLC_comms(plc1_ip,plc1_netid)
 			continue
 
 
@@ -128,6 +132,7 @@ def aux_PLC_comms(plc_address_aux,plc_netid_aux):
 			gwk_temp = plc1.get_handle('.GWK_Tank1_Temperature_d_degree')
 			part_number = plc1.get_handle('.TP_IW_Recipe_name')
 			status_handle = plc1.get_handle('.Running_Automatic_SCADA')
+			speed_handle = plc1.get_handle('.TP_IW_Einlauf_Drehzahl')
 		except:	
 			print(f"Auxiliary PLC_1: Couldn't open")
 			time.sleep(4)
@@ -135,7 +140,7 @@ def aux_PLC_comms(plc_address_aux,plc_netid_aux):
 		else:
 			plc1.open()
 			print("Success PLC_L1")
-			return plc1,gwk_temp,part_number,status_handle
+			return plc1,gwk_temp,part_number,status_handle,speed_handle
 
 
 
@@ -150,12 +155,13 @@ def PLC_comms2(PLC_2_queue_i,PLC_2_queue_o,plc2_ip,plc2_netid):
 		plc2.set_timeout(2000)
 		part_number = plc2.get_handle('.TP_IW_Recipe_name')
 		status_handle = plc2.get_handle('.Running_Automatic_SCADA')
+		speed_handle = plc2.get_handle('.TP_IW_Einlauf_Drehzahl')
 
 	
 	except Exception as e:
 			print(f"Starting error: {e}")
 			time.sleep(5)
-			plc2,part_number,status_handle = aux_PLC_comms_2(plc2_ip,plc2_netid)
+			plc2,part_number,status_handle,speed_handle = aux_PLC_comms_2(plc2_ip,plc2_netid)
 	while True:
 		# get a unit of work
 		try:
@@ -169,6 +175,7 @@ def PLC_comms2(PLC_2_queue_i,PLC_2_queue_o,plc2_ip,plc2_netid):
 			#PLC release and break
 			plc2.release_handle(part_number)
 			plc2.release_handle(status_handle)
+			plc2.release_handle(speed_handle)
 			print(f"handles2 released")
 			plc2.close()
 			PLC_2_queue_i.task_done()
@@ -179,15 +186,16 @@ def PLC_comms2(PLC_2_queue_i,PLC_2_queue_o,plc2_ip,plc2_netid):
 			#Normal program execution
 			plc2_num_parte= plc2.read_by_name("", plc_datatype=pyads.PLCTYPE_STRING,handle=part_number)
 			plc2_stat= plc2.read_by_name("", plc_datatype=pyads.PLCTYPE_BOOL,handle=status_handle)
+			plc2_spd= plc2.read_by_name("", plc_datatype=pyads.PLCTYPE_UINT,handle=speed_handle)
 			
 			# send the data over the queue
-			PLC_2_queue_o.put((plc2_num_parte,plc2_stat))
+			PLC_2_queue_o.put((plc2_num_parte,plc2_stat,plc2_spd))
 			time.sleep(4)
 
 
 		except Exception as e:
 			print(f"Could not update in PLC: error {e}")
-			plc2,part_number,status_handle = aux_PLC_comms_2(plc1_ip,plc1_netid)
+			plc2,part_number,status_handle,speed_handle = aux_PLC_comms_2(plc1_ip,plc1_netid)
 			continue
 
 
@@ -199,6 +207,7 @@ def aux_PLC_comms_2(plc_address_aux,plc_netid_aux):
 			plc2.open()
 			part_number = plc2.get_handle('.TP_IW_Recipe_name')
 			status_handle = plc2.get_handle('.Running_Automatic_SCADA')
+			speed_handle = plc2.get_handle('.TP_IW_Einlauf_Drehzahl')
 		except:	
 			print(f"Auxiliary PLC_2: Couldn't open")
 			time.sleep(4)
@@ -206,7 +215,7 @@ def aux_PLC_comms_2(plc_address_aux,plc_netid_aux):
 		else:
 			plc2.open()
 			print("Success PLC_L2")
-			return plc2,part_number,status_handle
+			return plc2,part_number,status_handle,speed_handle
 
 
 def PLC_comms3(PLC_3_queue_i,PLC_3_queue_o,plc3_ip,plc3_netid):
@@ -218,12 +227,14 @@ def PLC_comms3(PLC_3_queue_i,PLC_3_queue_o,plc3_ip,plc3_netid):
 		plc3.set_timeout(3000)
 		part_number = plc3.get_handle('.TP_IW_Recipe_name')
 		status_handle = plc3.get_handle('.Running_Automatic_SCADA')
+		speed_handle = plc3.get_handle('.TP_IW_Einlauf_Drehzahl')
+
 
 	
 	except Exception as e:
 			print(f"Starting error: {e}")
 			time.sleep(5)
-			plc3,part_number,status_handle = aux_PLC_comms_3(plc3_ip,plc3_netid)
+			plc3,part_number,status_handle,speed_handle = aux_PLC_comms_3(plc3_ip,plc3_netid)
 	while True:
 		# get a unit of work
 		try:
@@ -237,6 +248,7 @@ def PLC_comms3(PLC_3_queue_i,PLC_3_queue_o,plc3_ip,plc3_netid):
 			#PLC release and break
 			plc3.release_handle(part_number)
 			plc3.release_handle(status_handle)
+			plc3.release_handle(speed_handle)
 			print(f"handles3 released")
 			plc3.close()
 			PLC_3_queue_i.task_done()
@@ -247,15 +259,15 @@ def PLC_comms3(PLC_3_queue_i,PLC_3_queue_o,plc3_ip,plc3_netid):
 			#Normal program execution
 			plc3_num_parte= plc3.read_by_name("", plc_datatype=pyads.PLCTYPE_STRING,handle=part_number)
 			plc3_stat= plc3.read_by_name("", plc_datatype=pyads.PLCTYPE_BOOL,handle=status_handle)
-			
+			plc3_spd= plc3.read_by_name("", plc_datatype=pyads.PLCTYPE_UINT,handle=speed_handle)
 			# send the data over the queue
-			PLC_3_queue_o.put((plc3_num_parte,plc3_stat))
+			PLC_3_queue_o.put((plc3_num_parte,plc3_stat,plc3_spd))
 			time.sleep(4)
 
 
 		except Exception as e:
 			print(f"Could not update in PLC: error {e}")
-			plc3,part_number,status_handle = aux_PLC_comms_3(plc1_ip,plc1_netid)
+			plc3,part_number,status_handle,speed_handle = aux_PLC_comms_3(plc1_ip,plc1_netid)
 			continue
 
 
@@ -267,6 +279,7 @@ def aux_PLC_comms_3(plc_address_aux,plc_netid_aux):
 			plc3.open()
 			part_number = plc3.get_handle('.TP_IW_Recipe_name')
 			status_handle = plc3.get_handle('.Running_Automatic_SCADA')
+			speed_handle = plc3.get_handle('.TP_IW_Einlauf_Drehzahl')
 		except:	
 			print(f"Auxiliary PLC_3: Couldn't open")
 			time.sleep(4)
@@ -274,7 +287,7 @@ def aux_PLC_comms_3(plc_address_aux,plc_netid_aux):
 		else:
 			plc3.open()
 			print("Success PLC_L3")
-			return plc3,part_number,status_handle
+			return plc3,part_number,status_handle,speed_handle
 
 
 
@@ -363,6 +376,7 @@ def weather_data(PLC_5_queue_i,PLC_5_queue_o):
 	prev_temp = 0
 	prev_hum = 0
 	prev_pressure = 0
+
 	while True:
 		try:
 			item5 = PLC_5_queue_i.get(block=False)
@@ -378,54 +392,51 @@ def weather_data(PLC_5_queue_i,PLC_5_queue_o):
 			# upadting the URL
 			URL = BASE_URL + "lat=" + LAT + "&lon=" + LON + "&appid=" + API_KEY
 			response = []
-			response = requests.get(URL)
-			# checking the status code of the request
-			if response.status_code == 200:
-				data = []
-				# getting data in the json format
-				data = response.json()
-				# getting the main dict block
-				main = data['main']
-				# getting temperature
-				temperature = main['temp']
-				# getting the humidity
-				humidity = main['humidity']
-				# getting the pressure
-				pressure = main['pressure']
-				# weather report
-				report = data['weather']
-				#print(f"{CITY:-^30}")
-				#print(f"Temperature: {temperature}")
-				#print(f"Humidity: {humidity}")
-				#print(f"Pressure: {pressure}")
-				#print(f"Weather Report: {report[0]['description']}")
-				#print(f"sale info {main['temp']}")
-				prev_temp = 0
-				prev_pressure = 0
-				prev_hum = 0
-				prev_temp = temperature
-				prev_hum = humidity
-				prev_pressure = pressure
-				#print("updated weather")
-			else:
-				# showing the error message
-				print("Error in the HTTP request")
-				time.sleep(3)
+			try:
+				response = requests.get(URL)
+			except:
+				print("Error connecting to weather service")
+				time.sleep(2)
 				continue
+			else:
+				# checking the status code of the request
+				if response.status_code == 200:
+					data = []
+					# getting data in the json format
+					data = response.json()
+					# getting the main dict block
+					main = data['main']
+					# getting temperature
+					temperature = main['temp']
+					# getting the humidity
+					humidity = main['humidity']
+					# getting the pressure
+					pressure = main['pressure']
+					# weather report
+					report = data['weather']
+					prev_temp = 0
+					prev_hum = 0
+					prev_temp = temperature
+					prev_hum = humidity
+					#print("updated weather")
+				else:
+					data = []
+					temperature = 0
+					humidity =0 
+					prev_temp = 0
+					prev_hum = 0
+					# showing the error message
+					print("Error in the HTTP request")
+					if API_KEY == token_Tel:
+						API_KEY = token_Tel2
+					else:
+						API_KEY = token_Tel
+					time.sleep(2)
+					continue
 		
-		PLC_5_queue_o.put((prev_temp,prev_hum,prev_pressure))
-		time.sleep(4)
-
-
-		
-
-
-
-
-
-
-
-
+				PLC_5_queue_o.put((prev_temp,prev_hum))
+				print(f"{prev_temp,prev_hum}")
+				time.sleep(4)
 
 
 
@@ -435,6 +446,9 @@ def process_coordinator():
 	i_part_number = '0'
 	i_part_number2 = '0'
 	i_part_number3 = '0'
+	i_speed_1 = 0
+	i_speed_2 = 0
+	i_speed_3 = 0
 	status1 = False
 	status2 = False
 	status3 = False
@@ -443,7 +457,6 @@ def process_coordinator():
 	i_bomba2 = False
 	i_temp = 0
 	i_humidity = 0
-	i_pressure = 0
 	
 	while True:
 
@@ -459,18 +472,18 @@ def process_coordinator():
 				shutdown_queue.task_done()
 				break
 		if PLC_1_queue_o.qsize()>0:
-			i_gwk_temp,i_part_number,status1 = PLC_1_queue_o.get(block=False)
+			i_gwk_temp,i_part_number,status1,i_speed_1 = PLC_1_queue_o.get(block=False)
 			PLC_1_queue_o.task_done()
 			print("recibido de L1")
 			#i_gwk_temp,i_part_number,status1 = 0,'0','0'
 		
 		if PLC_2_queue_o.qsize()>0:
-			i_part_number2,status2 = PLC_2_queue_o.get(block=False)
+			i_part_number2,status2,i_speed_2 = PLC_2_queue_o.get(block=False)
 			PLC_2_queue_o.task_done()
 			print("recibido de L2")
 
 		if PLC_3_queue_o.qsize()>0:
-			i_part_number3,status3 = PLC_3_queue_o.get(block=False)
+			i_part_number3,status3,i_speed_3 = PLC_3_queue_o.get(block=False)
 			PLC_3_queue_o.task_done()
 			print("recibido de L3")
 
@@ -480,28 +493,13 @@ def process_coordinator():
 			print("recibido de L4")
 		
 		if PLC_5_queue_o.qsize()>0:
-			i_temp,i_humidity,i_pressure = PLC_5_queue_o.get(block=False)
+			i_temp,i_humidity = PLC_5_queue_o.get(block=False)
 			PLC_5_queue_o.task_done()
 			print("recibido de L5")
 
 
 		print(f"Info recibida {i_gwk_temp} {i_part_number2} {i_part_number3} {i_temp_torre} {i_temp}")
-		write_log(i_gwk_temp,i_part_number,i_part_number2,i_part_number3,status1,status2,status3,i_temp_torre,i_bomba1,i_bomba2,i_temp,i_humidity,i_pressure)
-		"""
-		i_gwk_temp = 0
-		i_part_number = '0'
-		i_part_number2 = '0'
-		i_part_number3 = '0'
-		status1 = False
-		status2 = False
-		status3 = False
-		i_temp_torre = 0
-		i_bomba1 = False
-		i_bomba2 = False
-		i_temp = 0
-		i_humidity = 0
-		i_pressure = 0
-		"""		
+		write_log(i_gwk_temp,i_part_number,i_part_number2,i_part_number3,status1,status2,status3,i_temp_torre,i_bomba1,i_bomba2,i_temp,i_humidity,i_speed_1,i_speed_2,i_speed_3)
 		#print(f"Stats de las queue input {PLC_1_queue_i.qsize()}, {PLC_2_queue_i.qsize()},{PLC_3_queue_i.qsize()},{PLC_4_queue_i.qsize()},{PLC_5_queue_i.qsize()}")
 		print(f"Stats de las queue output {PLC_1_queue_o.qsize()}, {PLC_2_queue_o.qsize()},{PLC_3_queue_o.qsize()},{PLC_4_queue_o.qsize()},{PLC_5_queue_o.qsize()}")
 
@@ -509,7 +507,10 @@ def process_coordinator():
 
 if __name__ == '__main__':
 
-	pd_dict = {'timestamp' : ['dumy'], 'temp_adentro' : ['dumy'], 'ITW1_PN' : ['dumy'], 'ITW2_PN' : ['dumy'], 'ITW3_ON' : ['dumy'], 'ITW1_Auto' : ['dumy'], 'ITW2_Auto' : ['dumy'], 'ITW3_Auto' : ['dumy'],'Temp_Torre' : ['dumy'], 'Bomba_1' : ['dumy'], 'Bomba_2' : ['dumy'], 'Clima_Temp' : ['dumy'], 'Clima_Humedad' : ['dumy'], 'Clima_Presion' : ['dumy']}
+
+
+
+	pd_dict = {'timestamp' : ['dumy'], 'temp_adentro' : ['dumy'], 'ITW1_PN' : ['dumy'], 'ITW2_PN' : ['dumy'], 'ITW3_PN' : ['dumy'], 'ITW1_Auto' : ['dumy'], 'ITW2_Auto' : ['dumy'], 'ITW3_Auto' : ['dumy'],'Temp_Torre' : ['dumy'], 'Bomba_1' : ['dumy'], 'Bomba_2' : ['dumy'], 'Clima_Temp' : ['dumy'], 'Clima_Humedad' : ['dumy'], 'ITW1_Spd' : ['dumy'], 'ITW2_Spd' : ['dumy'], 'ITW3_Spd' : ['dumy']}
 	
 
 # The three queues:
