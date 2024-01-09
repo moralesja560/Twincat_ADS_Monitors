@@ -53,24 +53,25 @@ def write_log(i_gwk_temp,i_part_number,i_part_number2,i_part_number3,status1,sta
 	else:
 		status1 = 0
 		i_speed_1 = 0
-	
+		i_part_number = 0
 	if status2:
 		status2 = 1
 	else:
 		status2 = 0
 		i_speed_2 = 0
-	
+		i_part_number2 = 0
 	if status3:
 		status3 = 1
 	else:
 		status3 = 0
 		i_speed_3 = 0
-	
+		i_part_number3 = 0
 	
 	if i_bomba1:
 		i_bomba1 = 1
 	else:
 		i_bomba1 = 0
+		
 	if i_bomba2:
 		i_bomba2 = 1
 	else:
