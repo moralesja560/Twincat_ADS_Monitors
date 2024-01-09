@@ -33,9 +33,9 @@ def My_Documents(location):
 	return temp_docs
 
 
-def write_log(i_gwk_temp,i_part_number,i_part_number2,i_part_number3,status1,status2,status3,i_temp_torre,i_bomba1,i_bomba2,i_temp,i_humidity,i_speed_1,i_speed_2,i_speed_3):
+def write_log(i_gwk_temp,i_part_number,i_part_number2,i_part_number3,status1,status2,status3,i_temp_torre,i_bomba1,i_bomba2,i_temp,i_humidity,i_speed_1,i_speed_2,i_speed_3,i_kg_1,i_kg_2,i_kg_3):
 	now = datetime.now()
-	dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
+	dt_string = int(now.strftime("%H"))
 	#print("date and time =", dt_string)	
 	mis_docs = My_Documents(5)
 	pd_ruta = str(mis_docs)+ r"\registro_agua.csv"
@@ -47,7 +47,41 @@ def write_log(i_gwk_temp,i_part_number,i_part_number2,i_part_number3,status1,sta
 	else:
 		pd_log = pd.DataFrame(pd_dict)
 
-	new_row = {'timestamp' : [dt_string], 'temp_adentro' : [i_gwk_temp], 'ITW1_PN' : [i_part_number], 'ITW2_PN' : [i_part_number2], 'ITW3_PN' : [i_part_number3], 'ITW1_Auto' : [status1], 'ITW2_Auto' : [status2], 'ITW3_Auto' : [status3],'Temp_Torre' : [i_temp_torre], 'Bomba_1' : [i_bomba1], 'Bomba_2' : [i_bomba2], 'Clima_Temp' : [i_temp], 'Clima_Humedad' : [i_humidity], 'ITW1_Spd' : [i_speed_1], 'ITW2_Spd' : [i_speed_2], 'ITW3_Spd' : [i_speed_3]}
+	#convertir bool to uint
+	if status1:
+		status1 = 1
+	else:
+		status1 = 0
+		i_speed_1 = 0
+	
+	if status2:
+		status2 = 1
+	else:
+		status2 = 0
+		i_speed_2 = 0
+	
+	if status3:
+		status3 = 1
+	else:
+		status3 = 0
+		i_speed_3 = 0
+	
+	
+	if i_bomba1:
+		i_bomba1 = 1
+	else:
+		i_bomba1 = 0
+	if i_bomba2:
+		i_bomba2 = 1
+	else:
+		i_bomba2 = 0
+
+	i_gwk_temp = i_gwk_temp/10
+	i_temp = i_temp - 273
+	i_temp_torre = i_temp_torre/10
+
+
+	new_row = {'timestamp' : [dt_string], 'temp_adentro' : [i_gwk_temp], 'ITW1_PN' : [i_part_number], 'ITW2_PN' : [i_part_number2], 'ITW3_PN' : [i_part_number3], 'ITW1_Auto' : [status1], 'ITW2_Auto' : [status2], 'ITW3_Auto' : [status3],'Temp_Torre' : [i_temp_torre], 'Bomba_1' : [i_bomba1], 'Bomba_2' : [i_bomba2], 'Clima_Temp' : [i_temp], 'Clima_Humedad' : [i_humidity], 'ITW1_Spd' : [i_speed_1], 'ITW2_Spd' : [i_speed_2], 'ITW3_Spd' : [i_speed_3], 'ITW1_KG' : [i_kg_1], 'ITW2_KG' : [i_kg_2], 'ITW3_KG' : [i_kg_3]}
 	new_row_pd = pd.DataFrame(new_row)
 	pd_concat = pd.concat([pd_log,new_row_pd])
 	pd_concat.to_csv(pd_ruta,index=False)
@@ -78,12 +112,12 @@ def PLC_comms1(PLC_1_queue_i,PLC_1_queue_o,plc1_ip,plc1_netid):
 		part_number = plc1.get_handle('.TP_IW_Recipe_name')
 		status_handle = plc1.get_handle('.Running_Automatic_SCADA')
 		speed_handle = plc1.get_handle('.TP_IW_Einlauf_Drehzahl')
-
+		kg_handle = plc1.get_handle('.Actual_Coil_Weight')	
 	
 	except Exception as e:
 			print(f"Starting error: {e}")
 			time.sleep(5)
-			plc1,gwk_temp,part_number,status_handle,speed_handle = aux_PLC_comms(plc1_ip,plc1_netid)
+			plc1,gwk_temp,part_number,status_handle,speed_handle,kg_handle = aux_PLC_comms(plc1_ip,plc1_netid)
 	while True:
 		# get a unit of work
 		try:
@@ -99,6 +133,7 @@ def PLC_comms1(PLC_1_queue_i,PLC_1_queue_o,plc1_ip,plc1_netid):
 			plc1.release_handle(part_number)
 			plc1.release_handle(status_handle)
 			plc1.release_handle(speed_handle)
+			plc1.release_handle(kg_handle)
 			print(f"handles1 released")
 			plc1.close()
 			PLC_1_queue_i.task_done()
@@ -111,15 +146,15 @@ def PLC_comms1(PLC_1_queue_i,PLC_1_queue_o,plc1_ip,plc1_netid):
 			plc1_temp= plc1.read_by_name("", plc_datatype=pyads.PLCTYPE_UINT,handle=gwk_temp)
 			plc1_stat= plc1.read_by_name("", plc_datatype=pyads.PLCTYPE_BOOL,handle=status_handle)
 			plc1_spd= plc1.read_by_name("", plc_datatype=pyads.PLCTYPE_UINT,handle=speed_handle)
-			
+			plc1_kg= plc1.read_by_name("", plc_datatype=pyads.PLCTYPE_DINT,handle=kg_handle)
 			# send the data over the queue
-			PLC_1_queue_o.put((plc1_temp,plc1_num_parte,plc1_stat,plc1_spd))
+			PLC_1_queue_o.put((plc1_temp,plc1_num_parte,plc1_stat,plc1_spd,plc1_kg))
 			time.sleep(4)
 
 
 		except Exception as e:
 			print(f"Could not update in PLC: error {e}")
-			plc1,gwk_temp,part_number,status_handle,speed_handle = aux_PLC_comms(plc1_ip,plc1_netid)
+			plc1,gwk_temp,part_number,status_handle,speed_handle,kg_handle = aux_PLC_comms(plc1_ip,plc1_netid)
 			continue
 
 
@@ -133,6 +168,7 @@ def aux_PLC_comms(plc_address_aux,plc_netid_aux):
 			part_number = plc1.get_handle('.TP_IW_Recipe_name')
 			status_handle = plc1.get_handle('.Running_Automatic_SCADA')
 			speed_handle = plc1.get_handle('.TP_IW_Einlauf_Drehzahl')
+			kg_handle = plc1.get_handle('.Actual_Coil_Weight')
 		except:	
 			print(f"Auxiliary PLC_1: Couldn't open")
 			time.sleep(4)
@@ -140,7 +176,7 @@ def aux_PLC_comms(plc_address_aux,plc_netid_aux):
 		else:
 			plc1.open()
 			print("Success PLC_L1")
-			return plc1,gwk_temp,part_number,status_handle,speed_handle
+			return plc1,gwk_temp,part_number,status_handle,speed_handle,kg_handle
 
 
 
@@ -156,12 +192,11 @@ def PLC_comms2(PLC_2_queue_i,PLC_2_queue_o,plc2_ip,plc2_netid):
 		part_number = plc2.get_handle('.TP_IW_Recipe_name')
 		status_handle = plc2.get_handle('.Running_Automatic_SCADA')
 		speed_handle = plc2.get_handle('.TP_IW_Einlauf_Drehzahl')
-
-	
+		kg_handle = plc2.get_handle('.Actual_Coil_Weight')
 	except Exception as e:
 			print(f"Starting error: {e}")
 			time.sleep(5)
-			plc2,part_number,status_handle,speed_handle = aux_PLC_comms_2(plc2_ip,plc2_netid)
+			plc2,part_number,status_handle,speed_handle,kg_handle = aux_PLC_comms_2(plc2_ip,plc2_netid)
 	while True:
 		# get a unit of work
 		try:
@@ -176,6 +211,7 @@ def PLC_comms2(PLC_2_queue_i,PLC_2_queue_o,plc2_ip,plc2_netid):
 			plc2.release_handle(part_number)
 			plc2.release_handle(status_handle)
 			plc2.release_handle(speed_handle)
+			plc2.release_handle(kg_handle)
 			print(f"handles2 released")
 			plc2.close()
 			PLC_2_queue_i.task_done()
@@ -187,15 +223,15 @@ def PLC_comms2(PLC_2_queue_i,PLC_2_queue_o,plc2_ip,plc2_netid):
 			plc2_num_parte= plc2.read_by_name("", plc_datatype=pyads.PLCTYPE_STRING,handle=part_number)
 			plc2_stat= plc2.read_by_name("", plc_datatype=pyads.PLCTYPE_BOOL,handle=status_handle)
 			plc2_spd= plc2.read_by_name("", plc_datatype=pyads.PLCTYPE_UINT,handle=speed_handle)
-			
+			plc2_kg= plc2.read_by_name("", plc_datatype=pyads.PLCTYPE_DINT,handle=kg_handle)
 			# send the data over the queue
-			PLC_2_queue_o.put((plc2_num_parte,plc2_stat,plc2_spd))
+			PLC_2_queue_o.put((plc2_num_parte,plc2_stat,plc2_spd,plc2_kg))
 			time.sleep(4)
 
 
 		except Exception as e:
 			print(f"Could not update in PLC: error {e}")
-			plc2,part_number,status_handle,speed_handle = aux_PLC_comms_2(plc1_ip,plc1_netid)
+			plc2,part_number,status_handle,speed_handle,kg_handle = aux_PLC_comms_2(plc1_ip,plc1_netid)
 			continue
 
 
@@ -208,6 +244,7 @@ def aux_PLC_comms_2(plc_address_aux,plc_netid_aux):
 			part_number = plc2.get_handle('.TP_IW_Recipe_name')
 			status_handle = plc2.get_handle('.Running_Automatic_SCADA')
 			speed_handle = plc2.get_handle('.TP_IW_Einlauf_Drehzahl')
+			kg_handle = plc2.get_handle('.Actual_Coil_Weight')
 		except:	
 			print(f"Auxiliary PLC_2: Couldn't open")
 			time.sleep(4)
@@ -215,7 +252,7 @@ def aux_PLC_comms_2(plc_address_aux,plc_netid_aux):
 		else:
 			plc2.open()
 			print("Success PLC_L2")
-			return plc2,part_number,status_handle,speed_handle
+			return plc2,part_number,status_handle,speed_handle,kg_handle
 
 
 def PLC_comms3(PLC_3_queue_i,PLC_3_queue_o,plc3_ip,plc3_netid):
@@ -228,13 +265,13 @@ def PLC_comms3(PLC_3_queue_i,PLC_3_queue_o,plc3_ip,plc3_netid):
 		part_number = plc3.get_handle('.TP_IW_Recipe_name')
 		status_handle = plc3.get_handle('.Running_Automatic_SCADA')
 		speed_handle = plc3.get_handle('.TP_IW_Einlauf_Drehzahl')
-
+		kg_handle = plc3.get_handle('.Actual_Coil_Weight')
 
 	
 	except Exception as e:
 			print(f"Starting error: {e}")
 			time.sleep(5)
-			plc3,part_number,status_handle,speed_handle = aux_PLC_comms_3(plc3_ip,plc3_netid)
+			plc3,part_number,status_handle,speed_handle,kg_handle = aux_PLC_comms_3(plc3_ip,plc3_netid)
 	while True:
 		# get a unit of work
 		try:
@@ -249,6 +286,7 @@ def PLC_comms3(PLC_3_queue_i,PLC_3_queue_o,plc3_ip,plc3_netid):
 			plc3.release_handle(part_number)
 			plc3.release_handle(status_handle)
 			plc3.release_handle(speed_handle)
+			plc3.release_handle(kg_handle)
 			print(f"handles3 released")
 			plc3.close()
 			PLC_3_queue_i.task_done()
@@ -260,14 +298,15 @@ def PLC_comms3(PLC_3_queue_i,PLC_3_queue_o,plc3_ip,plc3_netid):
 			plc3_num_parte= plc3.read_by_name("", plc_datatype=pyads.PLCTYPE_STRING,handle=part_number)
 			plc3_stat= plc3.read_by_name("", plc_datatype=pyads.PLCTYPE_BOOL,handle=status_handle)
 			plc3_spd= plc3.read_by_name("", plc_datatype=pyads.PLCTYPE_UINT,handle=speed_handle)
+			plc3_kg = plc3.read_by_name("", plc_datatype=pyads.PLCTYPE_DINT,handle=kg_handle)
 			# send the data over the queue
-			PLC_3_queue_o.put((plc3_num_parte,plc3_stat,plc3_spd))
+			PLC_3_queue_o.put((plc3_num_parte,plc3_stat,plc3_spd,plc3_kg))
 			time.sleep(4)
 
 
 		except Exception as e:
 			print(f"Could not update in PLC: error {e}")
-			plc3,part_number,status_handle,speed_handle = aux_PLC_comms_3(plc1_ip,plc1_netid)
+			plc3,part_number,status_handle,speed_handle,kg_handle = aux_PLC_comms_3(plc1_ip,plc1_netid)
 			continue
 
 
@@ -280,6 +319,7 @@ def aux_PLC_comms_3(plc_address_aux,plc_netid_aux):
 			part_number = plc3.get_handle('.TP_IW_Recipe_name')
 			status_handle = plc3.get_handle('.Running_Automatic_SCADA')
 			speed_handle = plc3.get_handle('.TP_IW_Einlauf_Drehzahl')
+			kg_handle = plc3.get_handle('.Actual_Coil_Weight')
 		except:	
 			print(f"Auxiliary PLC_3: Couldn't open")
 			time.sleep(4)
@@ -287,7 +327,7 @@ def aux_PLC_comms_3(plc_address_aux,plc_netid_aux):
 		else:
 			plc3.open()
 			print("Success PLC_L3")
-			return plc3,part_number,status_handle,speed_handle
+			return plc3,part_number,status_handle,speed_handle,kg_handle
 
 
 
@@ -449,6 +489,9 @@ def process_coordinator():
 	i_speed_1 = 0
 	i_speed_2 = 0
 	i_speed_3 = 0
+	i_kg_1 = 0
+	i_kg_2 = 0
+	i_kg_3 = 0
 	status1 = False
 	status2 = False
 	status3 = False
@@ -472,18 +515,18 @@ def process_coordinator():
 				shutdown_queue.task_done()
 				break
 		if PLC_1_queue_o.qsize()>0:
-			i_gwk_temp,i_part_number,status1,i_speed_1 = PLC_1_queue_o.get(block=False)
+			i_gwk_temp,i_part_number,status1,i_speed_1,i_kg_1 = PLC_1_queue_o.get(block=False)
 			PLC_1_queue_o.task_done()
 			print("recibido de L1")
 			#i_gwk_temp,i_part_number,status1 = 0,'0','0'
 		
 		if PLC_2_queue_o.qsize()>0:
-			i_part_number2,status2,i_speed_2 = PLC_2_queue_o.get(block=False)
+			i_part_number2,status2,i_speed_2,i_kg_2 = PLC_2_queue_o.get(block=False)
 			PLC_2_queue_o.task_done()
 			print("recibido de L2")
 
 		if PLC_3_queue_o.qsize()>0:
-			i_part_number3,status3,i_speed_3 = PLC_3_queue_o.get(block=False)
+			i_part_number3,status3,i_speed_3,i_kg_3 = PLC_3_queue_o.get(block=False)
 			PLC_3_queue_o.task_done()
 			print("recibido de L3")
 
@@ -499,7 +542,7 @@ def process_coordinator():
 
 
 		print(f"Info recibida {i_gwk_temp} {i_part_number2} {i_part_number3} {i_temp_torre} {i_temp}")
-		write_log(i_gwk_temp,i_part_number,i_part_number2,i_part_number3,status1,status2,status3,i_temp_torre,i_bomba1,i_bomba2,i_temp,i_humidity,i_speed_1,i_speed_2,i_speed_3)
+		write_log(i_gwk_temp,i_part_number,i_part_number2,i_part_number3,status1,status2,status3,i_temp_torre,i_bomba1,i_bomba2,i_temp,i_humidity,i_speed_1,i_speed_2,i_speed_3,i_kg_1,i_kg_2,i_kg_3)
 		#print(f"Stats de las queue input {PLC_1_queue_i.qsize()}, {PLC_2_queue_i.qsize()},{PLC_3_queue_i.qsize()},{PLC_4_queue_i.qsize()},{PLC_5_queue_i.qsize()}")
 		print(f"Stats de las queue output {PLC_1_queue_o.qsize()}, {PLC_2_queue_o.qsize()},{PLC_3_queue_o.qsize()},{PLC_4_queue_o.qsize()},{PLC_5_queue_o.qsize()}")
 
@@ -510,7 +553,7 @@ if __name__ == '__main__':
 
 
 
-	pd_dict = {'timestamp' : ['dumy'], 'temp_adentro' : ['dumy'], 'ITW1_PN' : ['dumy'], 'ITW2_PN' : ['dumy'], 'ITW3_PN' : ['dumy'], 'ITW1_Auto' : ['dumy'], 'ITW2_Auto' : ['dumy'], 'ITW3_Auto' : ['dumy'],'Temp_Torre' : ['dumy'], 'Bomba_1' : ['dumy'], 'Bomba_2' : ['dumy'], 'Clima_Temp' : ['dumy'], 'Clima_Humedad' : ['dumy'], 'ITW1_Spd' : ['dumy'], 'ITW2_Spd' : ['dumy'], 'ITW3_Spd' : ['dumy']}
+	pd_dict = {'timestamp' : ['dumy'], 'temp_adentro' : ['dumy'], 'ITW1_PN' : ['dumy'], 'ITW2_PN' : ['dumy'], 'ITW3_PN' : ['dumy'], 'ITW1_Auto' : ['dumy'], 'ITW2_Auto' : ['dumy'], 'ITW3_Auto' : ['dumy'],'Temp_Torre' : ['dumy'], 'Bomba_1' : ['dumy'], 'Bomba_2' : ['dumy'], 'Clima_Temp' : ['dumy'], 'Clima_Humedad' : ['dumy'], 'ITW1_Spd' : ['dumy'], 'ITW2_Spd' : ['dumy'], 'ITW3_Spd' : ['dumy'], 'ITW1_KG' : ['dumy'], 'ITW2_KG' : ['dumy'], 'ITW3_KG' : ['dumy']}
 	
 
 # The three queues:
