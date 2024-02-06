@@ -152,7 +152,7 @@ def PLC_comms1(PLC_1_queue_i,PLC_1_queue_o,plc1_ip,plc1_netid):
 			roll2_reg_temp= plc1.read_by_name("", plc_datatype=pyads.PLCTYPE_INT,handle=roller2_reg_temp)
 			
 			PLC_1_queue_o.put((roll1_amp,roll1_volt,roll1_spd,roll1_reg_temp,roll2_amp,roll2_volt,roll2_spd,roll2_reg_temp))
-			time.sleep(5)
+			time.sleep(4)
 
 
 		except Exception as e:
@@ -221,14 +221,15 @@ def PLC_comms2(PLC_2_queue_i,PLC_2_queue_o,plc2_ip,plc2_netid):
 		#it's time to work.
 		try:
 			#Normal program execution
+			plc2_num_parte = 's'
 			plc2_num_parte= plc2.read_by_name("", plc_datatype=pyads.PLCTYPE_STRING,handle=part_number)
-			PLC_2_queue_o.put((plc2_num_parte))
-			time.sleep(5)
+			PLC_2_queue_o.put(plc2_num_parte)
+			time.sleep(4)
 
 
 		except Exception as e:
 			print(f"Could not update in PLC2: error {e}")
-			plc2,part_number = aux_PLC_comms_2(plc1_ip,plc1_netid)
+			plc2,part_number = aux_PLC_comms_2(plc2_ip,plc2_netid)
 			continue
 
 
@@ -238,7 +239,7 @@ def aux_PLC_comms_2(plc_address_aux,plc_netid_aux):
 		try:
 			plc2=pyads.Connection(plc_netid_aux, 801,plc_address_aux)
 			plc2.open()
-			part_number = plc2.get_handle('.TP_SW_Durchmesser')
+			part_number = plc2.get_handle('.TP_IW_Federidentbezeichnung_vom_PC_String')
 		except:	
 			print(f"Auxiliary PLC_2: Couldn't open")
 			time.sleep(4)
@@ -492,12 +493,12 @@ def weather_data(PLC_5_queue_i,PLC_5_queue_o):
 def process_coordinator():
 
 	i_roll1_amp,i_roll1_volt,i_roll1_spd,i_roll1_reg_temp,i_roll2_amp,i_roll2_volt,i_roll2_spd,i_roll2_reg_temp = 0,0,0,0,0,0,0,0
-	i_part_number2 = 0
+	i_part_number2 = 's'
 	
 	while True:
 		
 		
-		time.sleep(4)
+		time.sleep(4.1)
 		try:
 			item = shutdown_queue.get(block=False)
 		except:
@@ -514,6 +515,7 @@ def process_coordinator():
 			#i_gwk_temp,i_part_number,status1 = 0,'0','0'
 		
 		if PLC_2_queue_o.qsize()>0:
+			i_part_number2 = 's'
 			i_part_number2= PLC_2_queue_o.get(block=False)
 			PLC_2_queue_o.task_done()
 			print("recibido de L2")
@@ -565,7 +567,7 @@ if __name__ == '__main__':
 	#hilo_block = False
 
 
-	pd_dict = {'timestamp' : ['dumy'], 'i_part_number2' : ['dumy'], 'i_roll1_amp' : ['dumy'], 'i_roll1_volt' : ['dumy'], 'i_roll1_spd' : ['dumy'], 'i_roll1_reg_temp' : ['dumy'], 'i_roll2_amp' : ['dumy'], 'i_roll2_volt' : ['dumy'],'i_roll2_spd' : ['dumy'], 'i_roll2_reg_temp' : ['dumy']}
+	pd_dict = {'timestamp' : [0], 'i_part_number2' : [0], 'i_roll1_amp' : [0], 'i_roll1_volt' : [0], 'i_roll1_spd' : [0], 'i_roll1_reg_temp' : [0], 'i_roll2_amp' : [0], 'i_roll2_volt' : [0],'i_roll2_spd' : [0], 'i_roll2_reg_temp' : [0]}
 
 
 # The three queues:
