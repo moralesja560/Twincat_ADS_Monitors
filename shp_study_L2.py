@@ -10,9 +10,9 @@ import json
 import pandas as pd
 from dotenv.main import load_dotenv
 import argparse
-import tensorflow as tf
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler
+#import tensorflow as tf
+#from sklearn.pipeline import Pipeline
+#from sklearn.preprocessing import StandardScaler
 import numpy as np
 
 load_dotenv()
@@ -38,12 +38,12 @@ def My_Documents(location):
 	return temp_docs
 
 
-def write_log(i_gwk_temp,i_part_number,i_part_number2,i_part_number3,status1,status2,status3,i_temp_torre,i_bomba1,i_bomba2,i_temp,i_humidity,i_speed_1,i_speed_2,i_speed_3,i_kg_1,i_kg_2,i_kg_3):
+def write_log(i_part_number2,i_roll1_amp,i_roll1_volt,i_roll1_spd,i_roll1_reg_temp,i_roll2_amp,i_roll2_volt,i_roll2_spd,i_roll2_reg_temp ):
 	now = datetime.now()
-	dt_string = int(now.strftime("%H"))
+	dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
 	#print("date and time =", dt_string)	
 	mis_docs = My_Documents(5)
-	pd_ruta = str(mis_docs)+ r"\registro_agua.csv"
+	pd_ruta = str(mis_docs)+ r"\registro_shp1.csv"
 	pd_file_exists = os.path.exists(pd_ruta)
 	
 	#check if pandas DataFrame exists to load the stuff or to create with dummy data.
@@ -53,7 +53,7 @@ def write_log(i_gwk_temp,i_part_number,i_part_number2,i_part_number3,status1,sta
 		pd_log = pd.DataFrame(pd_dict)
 	
 
-	new_row = {'timestamp' : [dt_string], 'temp_adentro' : [i_gwk_temp], 'ITW1_PN' : [i_part_number], 'ITW2_PN' : [i_part_number2], 'ITW3_PN' : [i_part_number3], 'ITW1_Auto' : [status1], 'ITW2_Auto' : [status2], 'ITW3_Auto' : [status3],'Temp_Torre' : [i_temp_torre], 'Bomba_1' : [i_bomba1], 'Bomba_2' : [i_bomba2], 'Clima_Temp' : [i_temp], 'Clima_Humedad' : [i_humidity], 'ITW1_Spd' : [i_speed_1], 'ITW2_Spd' : [i_speed_2], 'ITW3_Spd' : [i_speed_3], 'ITW1_KG' : [i_kg_1], 'ITW2_KG' : [i_kg_2], 'ITW3_KG' : [i_kg_3]}
+	new_row = {'timestamp' : [dt_string], 'i_part_number2' : [i_part_number2], 'i_roll1_amp' : [i_roll1_amp], 'i_roll1_volt' : [i_roll1_volt], 'i_roll1_spd' : [i_roll1_spd], 'i_roll1_reg_temp' : [i_roll1_reg_temp], 'i_roll2_amp' : [i_roll2_amp], 'i_roll2_volt' : [i_roll2_volt],'i_roll2_spd' : [i_roll2_spd], 'i_roll2_reg_temp' : [i_roll2_reg_temp]}
 	new_row_pd = pd.DataFrame(new_row)
 	pd_concat = pd.concat([pd_log,new_row_pd])
 	pd_concat.to_csv(pd_ruta,index=False)
@@ -82,15 +82,12 @@ def write_log_pred(prediction,real):
 
 	
 
-def watchdog_t(shutdown_queue,PLC_1_queue_i,PLC_2_queue_i,PLC_3_queue_i,PLC_4_queue_i):
+def watchdog_t(shutdown_queue,PLC_1_queue_i,PLC_2_queue_i):
 	while True:
 		stop_signal = input()
 		if stop_signal == "T":
 			PLC_1_queue_i.put(None)
 			PLC_2_queue_i.put(None)
-			PLC_3_queue_i.put(None)
-			PLC_4_queue_i.put(None)
-			PLC_5_queue_i.put(None)
 			shutdown_queue.put(None)
 		break
 
@@ -102,16 +99,21 @@ def PLC_comms1(PLC_1_queue_i,PLC_1_queue_o,plc1_ip,plc1_netid):
 		plc1=pyads.Connection(plc1_netid,801,plc1_ip)
 		plc1.open()
 		plc1.set_timeout(2000)
-		gwk_temp = plc1.get_handle('.GWK_Tank1_Temperature_d_degree')
-		part_number = plc1.get_handle('.TP_SW_Durchmesser')
-		status_handle = plc1.get_handle('.Running_Automatic_SCADA')
-		speed_handle = plc1.get_handle('.TP_IW_Einlauf_Drehzahl')
-		kg_handle = plc1.get_handle('.Actual_Coil_Weight')	
-	
+		roller1_amp = plc1.get_handle('.IW_DLS_Tragrollenantrieb1_Ist_Strom_100mA_INT')
+		roller1_volt = plc1.get_handle('.IW_DLS_Tragrollenantrieb1_Ist_Spannung_INT')
+		roller1_spd = plc1.get_handle('.IW_DLS_Tragrollenantrieb1_Ist_Drehzahl_INT')	
+		roller1_reg_temp = plc1.get_handle('.IW_DLS_Tragrollenantrieb1_ReglerTemp_INT')
+
+		roller2_amp = plc1.get_handle('.IW_DLS_Tragrollenantrieb2_Ist_Strom_100mA_INT')
+		roller2_volt = plc1.get_handle('.IW_DLS_Tragrollenantrieb2_Ist_Spannung_INT')
+		roller2_spd = plc1.get_handle('.IW_DLS_Tragrollenantrieb2_Ist_Drehzahl_INT')	
+		roller2_reg_temp = plc1.get_handle('.IW_DLS_Tragrollenantrieb2_ReglerTemp_INT')
+		
+
 	except Exception as e:
 			print(f"Starting error: {e}")
 			time.sleep(5)
-			plc1,gwk_temp,part_number,status_handle,speed_handle,kg_handle = aux_PLC_comms(plc1_ip,plc1_netid)
+			plc1,roller1_amp,roller1_volt,roller1_spd,roller1_reg_temp,roller2_amp,roller2_volt,roller2_spd,roller2_reg_temp= aux_PLC_comms(plc1_ip,plc1_netid)
 	while True:
 		# get a unit of work
 		try:
@@ -123,11 +125,14 @@ def PLC_comms1(PLC_1_queue_i,PLC_1_queue_o,plc1_ip,plc1_netid):
 		# check for stop
 		if item is None:
 			#PLC release and break
-			plc1.release_handle(gwk_temp)
-			plc1.release_handle(part_number)
-			plc1.release_handle(status_handle)
-			plc1.release_handle(speed_handle)
-			plc1.release_handle(kg_handle)
+			plc1.release_handle(roller1_amp)
+			plc1.release_handle(roller1_volt)
+			plc1.release_handle(roller1_spd)
+			plc1.release_handle(roller1_reg_temp)
+			plc1.release_handle(roller2_amp)
+			plc1.release_handle(roller2_volt)
+			plc1.release_handle(roller2_spd)
+			plc1.release_handle(roller2_reg_temp)
 			print(f"handles1 released")
 			plc1.close()
 			PLC_1_queue_i.task_done()
@@ -136,29 +141,23 @@ def PLC_comms1(PLC_1_queue_i,PLC_1_queue_o,plc1_ip,plc1_netid):
 		#it's time to work.
 		try:
 			#Normal program execution
-			plc1_num_parte= plc1.read_by_name("", plc_datatype=pyads.PLCTYPE_UINT,handle=part_number)
-			plc1_temp = 0
-			plc1_temp= plc1.read_by_name("", plc_datatype=pyads.PLCTYPE_UINT,handle=gwk_temp)
-			plc1_stat= plc1.read_by_name("", plc_datatype=pyads.PLCTYPE_BOOL,handle=status_handle)
-			plc1_spd= plc1.read_by_name("", plc_datatype=pyads.PLCTYPE_UINT,handle=speed_handle)
-			plc1_kg= plc1.read_by_name("", plc_datatype=pyads.PLCTYPE_DINT,handle=kg_handle)
-			# send the data over the queue
-			print(f"dato de PLC1 recibido {plc1_temp} ")
-			#convert bool to integer
-			if plc1_stat:
-				plc1_stat = 1
-			else:
-				plc1_stat = 0
-				plc1_spd = 0
-				plc1_kg = 0
-				plc1_num_parte = 0
-			PLC_1_queue_o.put((plc1_temp,plc1_num_parte,plc1_stat,plc1_spd,plc1_kg))
+			roll1_amp= plc1.read_by_name("", plc_datatype=pyads.PLCTYPE_INT,handle=roller1_amp)
+			roll1_volt= plc1.read_by_name("", plc_datatype=pyads.PLCTYPE_INT,handle=roller1_volt)
+			roll1_spd= plc1.read_by_name("", plc_datatype=pyads.PLCTYPE_INT,handle=roller1_spd)
+			roll1_reg_temp= plc1.read_by_name("", plc_datatype=pyads.PLCTYPE_INT,handle=roller1_reg_temp)
+			
+			roll2_amp= plc1.read_by_name("", plc_datatype=pyads.PLCTYPE_INT,handle=roller2_amp)
+			roll2_volt= plc1.read_by_name("", plc_datatype=pyads.PLCTYPE_INT,handle=roller2_volt)
+			roll2_spd= plc1.read_by_name("", plc_datatype=pyads.PLCTYPE_INT,handle=roller2_spd)
+			roll2_reg_temp= plc1.read_by_name("", plc_datatype=pyads.PLCTYPE_INT,handle=roller2_reg_temp)
+			
+			PLC_1_queue_o.put((roll1_amp,roll1_volt,roll1_spd,roll1_reg_temp,roll2_amp,roll2_volt,roll2_spd,roll2_reg_temp))
 			time.sleep(4)
 
 
 		except Exception as e:
 			print(f"Could not update in PLC1: error {e}")
-			plc1,gwk_temp,part_number,status_handle,speed_handle,kg_handle = aux_PLC_comms(plc1_ip,plc1_netid)
+			plc1,roller1_amp,roller1_volt,roller1_spd,roller1_reg_temp,roller2_amp,roller2_volt,roller2_spd,roller2_reg_temp = aux_PLC_comms(plc1_ip,plc1_netid)
 			continue
 
 
@@ -168,11 +167,15 @@ def aux_PLC_comms(plc_address_aux,plc_netid_aux):
 		try:
 			plc1=pyads.Connection(plc_netid_aux, 801,plc_address_aux)
 			plc1.open()
-			gwk_temp = plc1.get_handle('.GWK_Tank1_Temperature_d_degree')
-			part_number = plc1.get_handle('.TP_SW_Durchmesser')
-			status_handle = plc1.get_handle('.Running_Automatic_SCADA')
-			speed_handle = plc1.get_handle('.TP_IW_Einlauf_Drehzahl')
-			kg_handle = plc1.get_handle('.Actual_Coil_Weight')
+			roller1_amp = plc1.get_handle('.IW_DLS_Tragrollenantrieb1_Ist_Strom_100mA_INT')
+			roller1_volt = plc1.get_handle('.IW_DLS_Tragrollenantrieb1_Ist_Spannung_INT')
+			roller1_spd = plc1.get_handle('.IW_DLS_Tragrollenantrieb1_Ist_Drehzahl_INT')	
+			roller1_reg_temp = plc1.get_handle('.IW_DLS_Tragrollenantrieb1_ReglerTemp_INT')
+
+			roller2_amp = plc1.get_handle('.IW_DLS_Tragrollenantrieb2_Ist_Strom_100mA_INT')
+			roller2_volt = plc1.get_handle('.IW_DLS_Tragrollenantrieb2_Ist_Spannung_INT')
+			roller2_spd = plc1.get_handle('.IW_DLS_Tragrollenantrieb2_Ist_Drehzahl_INT')	
+			roller2_reg_temp = plc1.get_handle('.IW_DLS_Tragrollenantrieb2_ReglerTemp_INT')
 		except:	
 			print(f"Auxiliary PLC_1: Couldn't open")
 			time.sleep(4)
@@ -180,7 +183,7 @@ def aux_PLC_comms(plc_address_aux,plc_netid_aux):
 		else:
 			plc1.open()
 			print("Success PLC_L1")
-			return plc1,gwk_temp,part_number,status_handle,speed_handle,kg_handle
+			return plc1,roller1_amp,roller1_volt,roller1_spd,roller1_reg_temp,roller2_amp,roller2_volt,roller2_spd,roller2_reg_temp
 
 
 
@@ -193,14 +196,11 @@ def PLC_comms2(PLC_2_queue_i,PLC_2_queue_o,plc2_ip,plc2_netid):
 		plc2=pyads.Connection(plc2_netid,801,plc2_ip)
 		plc2.open()
 		plc2.set_timeout(2000)
-		part_number = plc2.get_handle('.TP_SW_Durchmesser')
-		status_handle = plc2.get_handle('.Running_Automatic_SCADA')
-		speed_handle = plc2.get_handle('.TP_IW_Einlauf_Drehzahl')
-		kg_handle = plc2.get_handle('.Actual_Coil_Weight')
+		part_number = plc2.get_handle('.TP_IW_Federidentbezeichnung_vom_PC_String')
 	except Exception as e:
 			print(f"Starting error: {e}")
 			time.sleep(5)
-			plc2,part_number,status_handle,speed_handle,kg_handle = aux_PLC_comms_2(plc2_ip,plc2_netid)
+			plc2,part_number = aux_PLC_comms_2(plc2_ip,plc2_netid)
 	while True:
 		# get a unit of work
 		try:
@@ -213,9 +213,6 @@ def PLC_comms2(PLC_2_queue_i,PLC_2_queue_o,plc2_ip,plc2_netid):
 		if item2 is None:
 			#PLC release and break
 			plc2.release_handle(part_number)
-			plc2.release_handle(status_handle)
-			plc2.release_handle(speed_handle)
-			plc2.release_handle(kg_handle)
 			print(f"handles2 released")
 			plc2.close()
 			PLC_2_queue_i.task_done()
@@ -224,26 +221,15 @@ def PLC_comms2(PLC_2_queue_i,PLC_2_queue_o,plc2_ip,plc2_netid):
 		#it's time to work.
 		try:
 			#Normal program execution
-			plc2_num_parte= plc2.read_by_name("", plc_datatype=pyads.PLCTYPE_UINT,handle=part_number)
-			plc2_stat= plc2.read_by_name("", plc_datatype=pyads.PLCTYPE_BOOL,handle=status_handle)
-			plc2_spd= plc2.read_by_name("", plc_datatype=pyads.PLCTYPE_UINT,handle=speed_handle)
-			plc2_kg= plc2.read_by_name("", plc_datatype=pyads.PLCTYPE_DINT,handle=kg_handle)
-			# send the data over the queue
-			if plc2_stat:
-				plc2_stat = 1
-			else:
-				plc2_stat = 0
-				plc2_spd = 0
-				plc2_kg = 0
-				plc2_num_parte = 0
-
-			PLC_2_queue_o.put((plc2_num_parte,plc2_stat,plc2_spd,plc2_kg))
+			plc2_num_parte = 's'
+			plc2_num_parte= plc2.read_by_name("", plc_datatype=pyads.PLCTYPE_STRING,handle=part_number)
+			PLC_2_queue_o.put(plc2_num_parte)
 			time.sleep(4)
 
 
 		except Exception as e:
 			print(f"Could not update in PLC2: error {e}")
-			plc2,part_number,status_handle,speed_handle,kg_handle = aux_PLC_comms_2(plc1_ip,plc1_netid)
+			plc2,part_number = aux_PLC_comms_2(plc2_ip,plc2_netid)
 			continue
 
 
@@ -253,10 +239,7 @@ def aux_PLC_comms_2(plc_address_aux,plc_netid_aux):
 		try:
 			plc2=pyads.Connection(plc_netid_aux, 801,plc_address_aux)
 			plc2.open()
-			part_number = plc2.get_handle('.TP_SW_Durchmesser')
-			status_handle = plc2.get_handle('.Running_Automatic_SCADA')
-			speed_handle = plc2.get_handle('.TP_IW_Einlauf_Drehzahl')
-			kg_handle = plc2.get_handle('.Actual_Coil_Weight')
+			part_number = plc2.get_handle('.TP_IW_Federidentbezeichnung_vom_PC_String')
 		except:	
 			print(f"Auxiliary PLC_2: Couldn't open")
 			time.sleep(4)
@@ -264,7 +247,7 @@ def aux_PLC_comms_2(plc_address_aux,plc_netid_aux):
 		else:
 			plc2.open()
 			print("Success PLC_L2")
-			return plc2,part_number,status_handle,speed_handle,kg_handle
+			return plc2,part_number
 
 
 def PLC_comms3(PLC_3_queue_i,PLC_3_queue_o,plc3_ip,plc3_netid):
@@ -509,29 +492,13 @@ def weather_data(PLC_5_queue_i,PLC_5_queue_o):
 
 def process_coordinator():
 
-	i_gwk_temp = 0
-	i_part_number = 0
-	i_part_number2 = 0
-	i_part_number3 = 0
-	i_speed_1 = 0
-	i_speed_2 = 0
-	i_speed_3 = 0
-	i_kg_1 = 0
-	i_kg_2 = 0
-	i_kg_3 = 0
-	status1 = False
-	status2 = False
-	status3 = False
-	i_temp_torre = 0
-	i_bomba1 = False
-	i_bomba2 = False
-	i_temp = 0
-	i_humidity = 0
+	i_roll1_amp,i_roll1_volt,i_roll1_spd,i_roll1_reg_temp,i_roll2_amp,i_roll2_volt,i_roll2_spd,i_roll2_reg_temp = 0,0,0,0,0,0,0,0
+	i_part_number2 = 's'
 	
 	while True:
 		
 		
-		time.sleep(3)
+		time.sleep(4.1)
 		try:
 			item = shutdown_queue.get(block=False)
 		except:
@@ -542,17 +509,19 @@ def process_coordinator():
 				shutdown_queue.task_done()
 				break
 		if PLC_1_queue_o.qsize()>0:
-			i_gwk_temp = 0
-			i_gwk_temp,i_part_number,status1,i_speed_1,i_kg_1 = PLC_1_queue_o.get(block=hilo_block)
+			i_roll1_amp,i_roll1_volt,i_roll1_spd,i_roll1_reg_temp,i_roll2_amp,i_roll2_volt,i_roll2_spd,i_roll2_reg_temp = PLC_1_queue_o.get(block=False)
 			PLC_1_queue_o.task_done()
-			print("recibido de L1")
+			print(f"recibido de L1. Restante {PLC_1_queue_o.qsize()}")
 			#i_gwk_temp,i_part_number,status1 = 0,'0','0'
 		
 		if PLC_2_queue_o.qsize()>0:
-			i_part_number2,status2,i_speed_2,i_kg_2 = PLC_2_queue_o.get(block=hilo_block)
+			i_part_number2 = 's'
+			i_part_number2= PLC_2_queue_o.get(block=False)
 			PLC_2_queue_o.task_done()
 			print("recibido de L2")
-
+		else:
+			i_part_number2 = 's'
+		"""
 		if PLC_3_queue_o.qsize()>0:
 			i_part_number3,status3,i_speed_3,i_kg_3 = PLC_3_queue_o.get(block=hilo_block)
 			PLC_3_queue_o.task_done()
@@ -567,50 +536,18 @@ def process_coordinator():
 			i_temp,i_humidity = PLC_5_queue_o.get(block=hilo_block)
 			PLC_5_queue_o.task_done()
 			print("recibido de L5")
+		"""
 
-
-		print(f"Info recibida {i_gwk_temp} {i_part_number2} {i_part_number3} {i_temp_torre} {i_temp}")
+		print(f"Info recibida {i_roll1_amp} {i_part_number2} {i_roll2_amp}")
 		#print(f"Stats de las queue output {PLC_1_queue_o.qsize()}, {PLC_2_queue_o.qsize()},{PLC_3_queue_o.qsize()},{PLC_4_queue_o.qsize()},{PLC_5_queue_o.qsize()}")
 
 		if opt.save_data:
-			write_log(i_gwk_temp,i_part_number,i_part_number2,i_part_number3,status1,status2,status3,i_temp_torre,i_bomba1,i_bomba2,i_temp,i_humidity,i_speed_1,i_speed_2,i_speed_3,i_kg_1,i_kg_2,i_kg_3)
+			write_log(i_part_number2,i_roll1_amp,i_roll1_volt,i_roll1_spd,i_roll1_reg_temp,i_roll2_amp,i_roll2_volt,i_roll2_spd,i_roll2_reg_temp )
 
-		if opt.pred:
-	#convertir bool to uint
-			now = datetime.now()
-			hora = int(now.strftime("%H"))
-			x_hour = hora
-			x_ITW1_PN = i_part_number
-			x_ITW2_PN = i_part_number2
-			x_ITW3_PN = i_part_number3
-			x_ITW1_Auto = status1
-			x_ITW2_Auto = status2
-			x_ITW3_Auto = status3
-			x_Temp_Torre = i_temp_torre
-			x_Bomba_1 = i_bomba1
-			x_Bomba_2 = i_bomba2
-			x_Clima_Temp = round(i_temp,2)
-			x_Clima_Humedad = i_humidity
-			x_ITW1_Spd = i_speed_1
-			x_ITW2_Spd = i_speed_2
-			x_ITW3_Spd = i_speed_3
-			x_ITW1_KG = i_kg_1
-			x_ITW2_KG = i_kg_2
-			x_ITW3_KG = i_kg_3
-			scaled = scaler.transform([[x_hour,x_ITW1_PN,x_ITW2_PN,x_ITW3_PN,x_ITW1_Auto,x_ITW2_Auto,x_ITW3_Auto,x_Temp_Torre,x_Bomba_1,x_Bomba_2,x_Clima_Temp,x_Clima_Humedad,x_ITW1_Spd,x_ITW2_Spd,x_ITW3_Spd,x_ITW1_KG,x_ITW2_KG,x_ITW3_KG]])
-			predict_data = saved_model.predict(scaled,verbose=0)
-			predict_data = predict_data.item()
-			print(f"Predict: {predict_data:,.1f} / Real: {i_gwk_temp:,.1f}. Deviation is {(predict_data-i_gwk_temp):.2f}")
-			write_log_pred(predict_data,i_gwk_temp)
-			if opt.debug:
-				print(f"Input para NN {x_hour,x_ITW1_PN,x_ITW2_PN,x_ITW3_PN,x_ITW1_Auto,x_ITW2_Auto,x_ITW3_Auto,x_Temp_Torre,x_Bomba_1,x_Bomba_2,x_Clima_Temp,x_Clima_Humedad,x_ITW1_Spd,x_ITW2_Spd,x_ITW3_Spd,x_ITW1_KG,x_ITW2_KG,x_ITW3_KG}")
-			
-			
 
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
-	parser.add_argument('--pred', action='store_true', help='Enable prediction mode')
 	parser.add_argument('--save_data', action='store_true', help='write_log_enabled')
 	parser.add_argument('--debug', action='store_true', help='write_log_enabled')
 	
@@ -619,19 +556,9 @@ if __name__ == '__main__':
 
 
 
-	if opt.pred:
-		print(" +++++++++++++ MODO PREDICCION")
-		X_train = pd.read_csv(resource_path('resources\X_train_load.csv'),index_col=False)
-		scaler = StandardScaler()
-		X_train_scaled = scaler.fit_transform(X_train)
-		saved_model = tf.keras.models.load_model(resource_path('TF_model_prototipe'))
-		#hilo_block=True
-	#else
-	hilo_block = False
 
+	pd_dict = {'timestamp' : [0], 'i_part_number2' : [0], 'i_roll1_amp' : [0], 'i_roll1_volt' : [0], 'i_roll1_spd' : [0], 'i_roll1_reg_temp' : [0], 'i_roll2_amp' : [0], 'i_roll2_volt' : [0],'i_roll2_spd' : [0], 'i_roll2_reg_temp' : [0]}
 
-	pd_dict = {'timestamp' : ['dumy'], 'temp_adentro' : ['dumy'], 'ITW1_PN' : ['dumy'], 'ITW2_PN' : ['dumy'], 'ITW3_PN' : ['dumy'], 'ITW1_Auto' : ['dumy'], 'ITW2_Auto' : ['dumy'], 'ITW3_Auto' : ['dumy'],'Temp_Torre' : ['dumy'], 'Bomba_1' : ['dumy'], 'Bomba_2' : ['dumy'], 'Clima_Temp' : ['dumy'], 'Clima_Humedad' : ['dumy'], 'ITW1_Spd' : ['dumy'], 'ITW2_Spd' : ['dumy'], 'ITW3_Spd' : ['dumy'], 'ITW1_KG' : ['dumy'], 'ITW2_KG' : ['dumy'], 'ITW3_KG' : ['dumy']}
-	pd_dict2 = {'timestamp' : ['dummy'], 'temp_pred' : ['dummy'], 'temp_Real' : ['dummy']}
 
 # The three queues:
 	PLC_1_queue_i = Queue()
@@ -649,14 +576,14 @@ if __name__ == '__main__':
 	shutdown_queue = Queue()
 
 	# Var definition:
-	plc2_netid =  '10.65.96.70.1.1'
-	plc1_netid =  '10.65.96.73.1.1'
-	plc3_netid =  '10.65.96.88.1.1'
-	plc_torre_netid = '10.65.68.130.1.1'
-	plc2_ip =  '10.65.96.70'
-	plc1_ip =  '10.65.96.73'
-	plc3_ip =  '10.65.96.88'
-	plc_torre_ip = '10.65.68.130'
+	plc1_netid =  '10.65.96.106.1.1'
+	plc2_netid =  '10.65.96.40.1.1'
+	#plc3_netid =  '10.65.96.88.1.1'
+	#plc_torre_netid = '10.65.68.130.1.1'
+	plc1_ip =  '10.65.106.41'
+	plc2_ip =  '10.65.96.40'
+	#plc3_ip =  '10.65.96.88'
+	#plc_torre_ip = '10.65.68.130'
 	
 	
 	try:
@@ -669,27 +596,27 @@ if __name__ == '__main__':
 		sys.exit()
 		
 	PLC_thread1 = Thread(name="hilo_PLC1",target=PLC_comms1, args=(PLC_1_queue_i,PLC_1_queue_o,plc1_ip,plc1_netid),daemon=True)
-	PLC_thread2 = Thread(name="hilo_PLC2",target=PLC_comms2, args=(PLC_2_queue_i,PLC_2_queue_o,plc2_ip,plc2_netid),daemon=True)
-	PLC_thread3 = Thread(name="hilo_PLC3",target=PLC_comms3, args=(PLC_3_queue_i,PLC_3_queue_o,plc3_ip,plc3_netid),daemon=True)
-	PLC_thread4 = Thread(name="hilo_PLC4",target=PLC_comms4, args=(PLC_4_queue_i,PLC_4_queue_o,plc_torre_ip,plc_torre_netid),daemon=True)
-	weather_thread = Thread(name="clima",target=weather_data, args=(PLC_5_queue_i,PLC_5_queue_o),daemon=True)
+	#PLC_thread2 = Thread(name="hilo_PLC2",target=PLC_comms2, args=(PLC_2_queue_i,PLC_2_queue_o,plc2_ip,plc2_netid),daemon=True)
+	#PLC_thread3 = Thread(name="hilo_PLC3",target=PLC_comms3, args=(PLC_3_queue_i,PLC_3_queue_o,plc3_ip,plc3_netid),daemon=True)
+	#PLC_thread4 = Thread(name="hilo_PLC4",target=PLC_comms4, args=(PLC_4_queue_i,PLC_4_queue_o,plc_torre_ip,plc_torre_netid),daemon=True)
+	#weather_thread = Thread(name="clima",target=weather_data, args=(PLC_5_queue_i,PLC_5_queue_o),daemon=True)
 	
 	PLC_thread1.start()
-	PLC_thread2.start()
-	PLC_thread3.start()
-	PLC_thread4.start()
-	weather_thread.start()
+	#LC_thread2.start()
+	#PLC_thread3.start()
+	#PLC_thread4.start()
+	#weather_thread.start()
 
-	monitor_thread = Thread(target=watchdog_t, args=(shutdown_queue,PLC_1_queue_i,PLC_2_queue_i,PLC_3_queue_i,PLC_4_queue_i),daemon=True)
+	monitor_thread = Thread(target=watchdog_t, args=(shutdown_queue,PLC_1_queue_i,PLC_2_queue_i),daemon=True)
 	monitor_thread.start()
 
 	process_coordinator()
 
 	monitor_thread.join()
 	PLC_thread1.join()
-	PLC_thread2.join()
-	PLC_thread3.join()
-	PLC_thread4.join()
-	weather_thread.join()
+	#PLC_thread2.join()
+	#PLC_thread3.join()
+	#PLC_thread4.join()
+	#weather_thread.join()
 
 	

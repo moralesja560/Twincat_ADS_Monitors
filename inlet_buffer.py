@@ -38,12 +38,13 @@ def My_Documents(location):
 	return temp_docs
 
 
-def write_log(i_part_number2,i_roll1_amp,i_roll1_volt,i_roll1_spd,i_roll1_reg_temp,i_roll2_amp,i_roll2_volt,i_roll2_spd,i_roll2_reg_temp ):
+def write_log(Q1B_var2 ,Q2B_var2 ,Q3B_var2 ,Q4B_var2 ,Q1F_var2 ,Q2F_var2 ,Q3F_var2 ,Q4F_var2 ,HM_1B_var2 ,HM_2B_var2 ,HM_3B_var2 ,HM_4B_var2 ,HM_1F_var2 ,HM_2F_var2 ,HM_3F_var2 ,HM_4F_var2 ,HM_L_var2 ,HM_U_var2 ,L1S1_var2 ,L1S2_var2 ,
+			  L1S3_var2 ,L1S4_var2 ,L2S1_var2 ,L2S2_var2 ,L2S3_var2 ,L2S4_var2 ,L3S1_var2 ,L3S2_var2 ,L3S3_var2 ,L3S4_var2 ,L4S1_var2 ,L4S2_var2 ,L4S3_var2 ,L4S4_var2 ):
 	now = datetime.now()
 	dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
 	#print("date and time =", dt_string)	
 	mis_docs = My_Documents(5)
-	pd_ruta = str(mis_docs)+ r"\registro_shp1.csv"
+	pd_ruta = str(mis_docs)+ r"\registro_buffer.csv"
 	pd_file_exists = os.path.exists(pd_ruta)
 	
 	#check if pandas DataFrame exists to load the stuff or to create with dummy data.
@@ -53,10 +54,47 @@ def write_log(i_part_number2,i_roll1_amp,i_roll1_volt,i_roll1_spd,i_roll1_reg_te
 		pd_log = pd.DataFrame(pd_dict)
 	
 
-	new_row = {'timestamp' : [dt_string], 'i_part_number2' : [i_part_number2], 'i_roll1_amp' : [i_roll1_amp], 'i_roll1_volt' : [i_roll1_volt], 'i_roll1_spd' : [i_roll1_spd], 'i_roll1_reg_temp' : [i_roll1_reg_temp], 'i_roll2_amp' : [i_roll2_amp], 'i_roll2_volt' : [i_roll2_volt],'i_roll2_spd' : [i_roll2_spd], 'i_roll2_reg_temp' : [i_roll2_reg_temp]}
+	#new_row = {'timestamp' : [dt_string], 'i_part_number2' : [i_part_number2], 'i_roll1_amp' : [i_roll1_amp], 'i_roll1_volt' : [i_roll1_volt], 'i_roll1_spd' : [i_roll1_spd], 'i_roll1_reg_temp' : [i_roll1_reg_temp], 'chain_speed' : [i_roll2_amp], 'i_roll2_volt' : [i_roll2_volt],'i_roll2_spd' : [i_roll2_spd], 'i_roll2_reg_temp' : [i_roll2_reg_temp]}
+	
+	new_row = {'timestamp' : [dt_string], 'Q_Drawer_1_Back' : [Q1B_var2], 'Q_Drawer_2_Back' : [Q2B_var2], 'Q_Drawer_3_Back' : [Q3B_var2], 'Q_Drawer_4_Back' : [Q4B_var2], 
+			'Q_Drawer_1_Front' : [Q1F_var2], 'Q_Drawer_2_Front' : [Q2F_var2], 'Q_Drawer_3_Front' : [Q3F_var2],'Q_Drawer_4_Front' : [Q4F_var2], 'HM_Auto_Drawer_1_Back' : [HM_1B_var2],
+			'HM_Auto_Drawer_2_Back' : [HM_2B_var2], 'HM_Auto_Drawer_3_Back' : [HM_3B_var2], 'HM_Auto_Drawer_4_Back' : [HM_4B_var2],'HM_Auto_Drawer_1_Front' : [HM_1F_var2], 'HM_Auto_Drawer_2_Front' : [HM_2F_var2],
+			'HM_Auto_Drawer_3_Front' : [HM_3F_var2], 'HM_Auto_Drawer_4_Front' : [HM_4F_var2],'HM_Load_Auto_Buffer' : [HM_L_var2], 'HM_Unload_Auto_Buffer' : [HM_U_var2],
+			'TP_LM_Auto_Buffer_Drawer_Free_Level_1_Spot_1' : [L1S1_var2], 'TP_LM_Auto_Buffer_Drawer_Free_Level_1_Spot_2' : [L1S2_var2], 'TP_LM_Auto_Buffer_Drawer_Free_Level_1_Spot_3' : [L1S3_var2],'TP_LM_Auto_Buffer_Drawer_Free_Level_1_Spot_4' : [L1S4_var2],
+'TP_LM_Auto_Buffer_Drawer_Free_Level_2_Spot_1' : [L2S1_var2], 'TP_LM_Auto_Buffer_Drawer_Free_Level_2_Spot_2' : [L2S2_var2], 'TP_LM_Auto_Buffer_Drawer_Free_Level_2_Spot_3' : [L2S3_var2], 'TP_LM_Auto_Buffer_Drawer_Free_Level_2_Spot_4' : [L2S4_var2],
+'TP_LM_Auto_Buffer_Drawer_Free_Level_3_Spot_1' : [L3S1_var2], 'TP_LM_Auto_Buffer_Drawer_Free_Level_3_Spot_2' : [L3S2_var2], 'TP_LM_Auto_Buffer_Drawer_Free_Level_3_Spot_3' : [L3S3_var2], 'TP_LM_Auto_Buffer_Drawer_Free_Level_3_Spot_4' : [L3S4_var2],
+'TP_LM_Auto_Buffer_Drawer_Free_Level_4_Spot_1' : [L4S1_var2], 'TP_LM_Auto_Buffer_Drawer_Free_Level_4_Spot_2' : [L4S2_var2], 'TP_LM_Auto_Buffer_Drawer_Free_Level_4_Spot_3' : [L4S3_var2], 'TP_LM_Auto_Buffer_Drawer_Free_Level_4_Spot_4' : [L4S4_var2]}
+
+	
+	
 	new_row_pd = pd.DataFrame(new_row)
 	pd_concat = pd.concat([pd_log,new_row_pd])
 	pd_concat.to_csv(pd_ruta,index=False)
+
+
+def write_log2(buffer_stats):
+	now = datetime.now()
+	dt_string = now.strftime("%d/%m/%Y %H:%M:%S.%f")[:-3]
+	#print("date and time =", dt_string)	
+	mis_docs = My_Documents(5)
+	pd_ruta = str(mis_docs)+ r"\registro_buffer_3.csv"
+	pd_file_exists = os.path.exists(pd_ruta)
+	
+	#check if pandas DataFrame exists to load the stuff or to create with dummy data.
+	if pd_file_exists:
+		pd_log = pd.read_csv(pd_ruta)
+	else:
+		pd_log = pd.DataFrame(pd_dict2)
+	
+
+	#new_row = {'timestamp' : [dt_string], 'i_part_number2' : [i_part_number2], 'i_roll1_amp' : [i_roll1_amp], 'i_roll1_volt' : [i_roll1_volt], 'i_roll1_spd' : [i_roll1_spd], 'i_roll1_reg_temp' : [i_roll1_reg_temp], 'chain_speed' : [i_roll2_amp], 'i_roll2_volt' : [i_roll2_volt],'i_roll2_spd' : [i_roll2_spd], 'i_roll2_reg_temp' : [i_roll2_reg_temp]}
+	
+	new_row2 = {'timestamp' : [dt_string], 'buffer': [buffer_stats]}
+	
+	new_row_pd = pd.DataFrame(new_row2)
+	pd_concat = pd.concat([pd_log,new_row_pd])
+	pd_concat.to_csv(pd_ruta,index=False)
+
 
 
 def write_log_pred(prediction,real):
@@ -83,13 +121,14 @@ def write_log_pred(prediction,real):
 	
 
 def watchdog_t(shutdown_queue,PLC_1_queue_i,PLC_2_queue_i):
+	stop_signal = None
 	while True:
 		stop_signal = input()
 		if stop_signal == "T":
 			PLC_1_queue_i.put(None)
 			PLC_2_queue_i.put(None)
 			shutdown_queue.put(None)
-		break
+			break
 
 
 def PLC_comms1(PLC_1_queue_i,PLC_1_queue_o,plc1_ip,plc1_netid):
@@ -99,21 +138,15 @@ def PLC_comms1(PLC_1_queue_i,PLC_1_queue_o,plc1_ip,plc1_netid):
 		plc1=pyads.Connection(plc1_netid,801,plc1_ip)
 		plc1.open()
 		plc1.set_timeout(2000)
-		roller1_amp = plc1.get_handle('.IW_Ausschub_Spur1_Ist_Strom_100mA_INT')
-		roller1_volt = plc1.get_handle('.IW_Tragrollenantrieb1_Ist_Spannung_INT')
-		roller1_spd = plc1.get_handle('.IW_Tragrollenantrieb1_Ist_Drehzahl_INT')	
-		roller1_reg_temp = plc1.get_handle('.IW_Tragrollenantrieb1_ReglerTemp_INT')
-
-		roller2_amp = plc1.get_handle('.IW_Ausschub_Spur2_Ist_Strom_100mA_INT')
-		roller2_volt = plc1.get_handle('.IW_Tragrollenantrieb2_Ist_Spannung_INT')
-		roller2_spd = plc1.get_handle('.IW_Tragrollenantrieb2_Ist_Drehzahl_INT')	
-		roller2_reg_temp = plc1.get_handle('.IW_Tragrollenantrieb2_ReglerTemp_INT')
+		arr1_handle = plc1.get_handle('Automatic_Buffer_System.Buffer_Status_Array_1_32_OF_BOOL')
+		
 		
 
 	except Exception as e:
 			print(f"Starting error: {e}")
 			time.sleep(5)
-			plc1,roller1_amp,roller1_volt,roller1_spd,roller1_reg_temp,roller2_amp,roller2_volt,roller2_spd,roller2_reg_temp= aux_PLC_comms(plc1_ip,plc1_netid)
+			#plc1,Q1B_handle ,Q2B_handle ,Q3B_handle ,Q4B_handle ,Q1F_handle ,Q2F_handle ,Q3F_handle ,Q4F_handle ,HM_1B_handle ,HM_2B_handle ,HM_3B_handle ,HM_4B_handle ,HM_1F_handle ,HM_2F_handle ,HM_3F_handle ,HM_4F_handle ,HM_L_handle ,HM_U_handle ,L1S1_handle ,L1S2_handle ,L1S3_handle ,L1S4_handle ,L2S1_handle ,L2S2_handle ,L2S3_handle ,L2S4_handle ,L3S1_handle ,L3S2_handle ,L3S3_handle ,L3S4_handle ,L4S1_handle ,L4S2_handle ,L4S3_handle ,L4S4_handle  = aux_PLC_comms(plc1_ip,plc1_netid)
+			plc1,arr1_handle= aux_PLC_comms(plc1_ip,plc1_netid)
 	while True:
 		# get a unit of work
 		try:
@@ -125,14 +158,8 @@ def PLC_comms1(PLC_1_queue_i,PLC_1_queue_o,plc1_ip,plc1_netid):
 		# check for stop
 		if item is None:
 			#PLC release and break
-			plc1.release_handle(roller1_amp)
-			plc1.release_handle(roller1_volt)
-			plc1.release_handle(roller1_spd)
-			plc1.release_handle(roller1_reg_temp)
-			plc1.release_handle(roller2_amp)
-			plc1.release_handle(roller2_volt)
-			plc1.release_handle(roller2_spd)
-			plc1.release_handle(roller2_reg_temp)
+
+			plc1.release_handle(arr1_handle)
 			print(f"handles1 released")
 			plc1.close()
 			PLC_1_queue_i.task_done()
@@ -141,23 +168,22 @@ def PLC_comms1(PLC_1_queue_i,PLC_1_queue_o,plc1_ip,plc1_netid):
 		#it's time to work.
 		try:
 			#Normal program execution
-			roll1_amp= plc1.read_by_name("", plc_datatype=pyads.PLCTYPE_INT,handle=roller1_amp)
-			roll1_volt= plc1.read_by_name("", plc_datatype=pyads.PLCTYPE_INT,handle=roller1_volt)
-			roll1_spd= plc1.read_by_name("", plc_datatype=pyads.PLCTYPE_INT,handle=roller1_spd)
-			roll1_reg_temp= plc1.read_by_name("", plc_datatype=pyads.PLCTYPE_INT,handle=roller1_reg_temp)
 			
-			roll2_amp= plc1.read_by_name("", plc_datatype=pyads.PLCTYPE_INT,handle=roller2_amp)
-			roll2_volt= plc1.read_by_name("", plc_datatype=pyads.PLCTYPE_INT,handle=roller2_volt)
-			roll2_spd= plc1.read_by_name("", plc_datatype=pyads.PLCTYPE_INT,handle=roller2_spd)
-			roll2_reg_temp= plc1.read_by_name("", plc_datatype=pyads.PLCTYPE_INT,handle=roller2_reg_temp)
+			buffer_stat = plc1.read_by_name('Automatic_Buffer_System.Buffer_Status_Array_1_32_OF_BOOL', pyads.PLCTYPE_BOOL * 38,handle=arr1_handle)
+					
+			#PLC_1_queue_o.put((Q1B_var,Q2B_var ,Q3B_var ,Q4B_var ,Q1F_var ,Q2F_var ,Q3F_var ,Q4F_var ,HM_1B_var ,HM_2B_var ,HM_3B_var,HM_4B_var ,HM_1F_var ,HM_2F_var ,HM_3F_var ,HM_4F_var ,HM_L_var ,HM_U_var ,L1S1_var ,L1S2_var ,L1S3_var ,L1S4_var ,L2S1_var ,L2S2_var ,L2S3_var ,L2S4_var ,L3S1_var ,L3S2_var ,L3S3_var ,L3S4_var ,L4S1_var ,L4S2_var ,L4S3_var ,L4S4_var))
 			
-			PLC_1_queue_o.put((roll1_amp,roll1_volt,roll1_spd,roll1_reg_temp,roll2_amp,roll2_volt,roll2_spd,roll2_reg_temp))
-			#time.sleep(0.1)
+			
+			PLC_1_queue_o.put(buffer_stat)
 
+			#if PLC_1_queue_o.qsize()>1:
+			#	time.sleep(PLC_1_queue_o.qsize()*0.09)
+			time.sleep(60)
 
 		except Exception as e:
 			print(f"Could not update in PLC1: error {e}")
-			plc1,roller1_amp,roller1_volt,roller1_spd,roller1_reg_temp,roller2_amp,roller2_volt,roller2_spd,roller2_reg_temp = aux_PLC_comms(plc1_ip,plc1_netid)
+			#plc1,Q1B_handle ,Q2B_handle ,Q3B_handle ,Q4B_handle ,Q1F_handle ,Q2F_handle ,Q3F_handle ,Q4F_handle ,HM_1B_handle ,HM_2B_handle ,HM_3B_handle ,HM_4B_handle ,HM_1F_handle ,HM_2F_handle ,HM_3F_handle ,HM_4F_handle ,HM_L_handle ,HM_U_handle ,L1S1_handle ,L1S2_handle ,L1S3_handle ,L1S4_handle ,L2S1_handle ,L2S2_handle ,L2S3_handle ,L2S4_handle ,L3S1_handle ,L3S2_handle ,L3S3_handle ,L3S4_handle ,L4S1_handle ,L4S2_handle ,L4S3_handle ,L4S4_handle  = aux_PLC_comms(plc1_ip,plc1_netid)
+			plc1,arr1_handle= aux_PLC_comms(plc1_ip,plc1_netid)
 			continue
 
 
@@ -167,15 +193,7 @@ def aux_PLC_comms(plc_address_aux,plc_netid_aux):
 		try:
 			plc1=pyads.Connection(plc_netid_aux, 801,plc_address_aux)
 			plc1.open()
-			roller1_amp = plc1.get_handle('.IW_Ausschub_Spur1_Ist_Strom_100mA_INT')
-			roller1_volt = plc1.get_handle('.IW_Tragrollenantrieb1_Ist_Spannung_INT')
-			roller1_spd = plc1.get_handle('.IW_Tragrollenantrieb1_Ist_Drehzahl_INT')	
-			roller1_reg_temp = plc1.get_handle('.IW_Tragrollenantrieb1_ReglerTemp_INT')
-
-			roller2_amp = plc1.get_handle('.IW_Ausschub_Spur2_Ist_Strom_100mA_INT')
-			roller2_volt = plc1.get_handle('.IW_Tragrollenantrieb2_Ist_Spannung_INT')
-			roller2_spd = plc1.get_handle('.IW_Tragrollenantrieb2_Ist_Drehzahl_INT')	
-			roller2_reg_temp = plc1.get_handle('.IW_Tragrollenantrieb2_ReglerTemp_INT')
+			arr1_handle = plc1.get_handle('Automatic_Buffer_System.Buffer_Status_Array_1_32_OF_BOOL')
 		except:	
 			print(f"Auxiliary PLC_1: Couldn't open")
 			time.sleep(4)
@@ -183,8 +201,8 @@ def aux_PLC_comms(plc_address_aux,plc_netid_aux):
 		else:
 			plc1.open()
 			print("Success PLC_L1")
-			return plc1,roller1_amp,roller1_volt,roller1_spd,roller1_reg_temp,roller2_amp,roller2_volt,roller2_spd,roller2_reg_temp
-
+			#return plc1,Q1B_handle ,Q2B_handle ,Q3B_handle ,Q4B_handle ,Q1F_handle ,Q2F_handle ,Q3F_handle ,Q4F_handle ,HM_1B_handle ,HM_2B_handle ,HM_3B_handle ,HM_4B_handle ,HM_1F_handle ,HM_2F_handle ,HM_3F_handle ,HM_4F_handle ,HM_L_handle ,HM_U_handle ,L1S1_handle ,L1S2_handle ,L1S3_handle ,L1S4_handle ,L2S1_handle ,L2S2_handle ,L2S3_handle ,L2S4_handle ,L3S1_handle ,L3S2_handle ,L3S3_handle ,L3S4_handle ,L4S1_handle ,L4S2_handle ,L4S3_handle ,L4S4_handle 
+			return plc1,arr1_handle
 
 
 
@@ -492,13 +510,19 @@ def weather_data(PLC_5_queue_i,PLC_5_queue_o):
 
 def process_coordinator():
 
-	i_roll1_amp,i_roll1_volt,i_roll1_spd,i_roll1_reg_temp,i_roll2_amp,i_roll2_volt,i_roll2_spd,i_roll2_reg_temp = 0,0,0,0,0,0,0,0
-	i_part_number2 = 's'
+	Q1B_var1 ,Q2B_var1 ,Q3B_var1 ,Q4B_var1=0,0,0,0
+	Q1F_var1 ,Q2F_var1 ,Q3F_var1 ,Q4F_var1=0,0,0,0
+	HM_1B_var1,HM_2B_var1,HM_3B_var1,HM_4B_var1 = 0,0,0,0
+	HM_1F_var1 ,HM_2F_var1,HM_3F_var1,HM_4F_var1 =0,0,0,0
+	HM_L_var1 ,HM_U_var1 = 0,0
+	L1S1_var1 ,L1S2_var1 ,L1S3_var1 ,L1S4_var1 = 0,0,0,0
+	L2S1_var1 ,L2S2_var1 ,L2S3_var1 ,L2S4_var1 = 0,0,0,0
+	L3S1_var1 ,L3S2_var1 ,L3S3_var1 ,L3S4_var1 = 0,0,0,0
+	L4S1_var1 ,L4S2_var1 ,L4S3_var1 ,L4S4_var1 = 0,0,0,0
+	buffer_status = [0]
 	
 	while True:
-		
-		
-		#time.sleep(0.7)
+
 		try:
 			item = shutdown_queue.get(block=False)
 		except:
@@ -509,9 +533,12 @@ def process_coordinator():
 				shutdown_queue.task_done()
 				break
 		#if PLC_1_queue_o.qsize()>0:
-		i_roll1_amp,i_roll1_volt,i_roll1_spd,i_roll1_reg_temp,i_roll2_amp,i_roll2_volt,i_roll2_spd,i_roll2_reg_temp = PLC_1_queue_o.get(block=True)
-		PLC_1_queue_o.task_done()
-		print(f"recibido de L1: {PLC_1_queue_o.qsize()}")
+		try:
+			buffer_status = PLC_1_queue_o.get(block=False)
+			PLC_1_queue_o.task_done()
+		except:
+			continue
+		print(f"recibido de L1. Remaining {PLC_1_queue_o.qsize()} ")
 			#i_gwk_temp,i_part_number,status1 = 0,'0','0'
 		
 		if PLC_2_queue_o.qsize()>0:
@@ -535,13 +562,11 @@ def process_coordinator():
 			PLC_5_queue_o.task_done()
 			print("recibido de L5")
 		"""
-
-		print(f"Info recibida {i_roll1_amp} {i_part_number2} {i_roll2_amp}")
 		#print(f"Stats de las queue output {PLC_1_queue_o.qsize()}, {PLC_2_queue_o.qsize()},{PLC_3_queue_o.qsize()},{PLC_4_queue_o.qsize()},{PLC_5_queue_o.qsize()}")
 
 		if opt.save_data:
-			write_log(i_part_number2,i_roll1_amp,i_roll1_volt,i_roll1_spd,i_roll1_reg_temp,i_roll2_amp,i_roll2_volt,i_roll2_spd,i_roll2_reg_temp )
-
+			write_log2(buffer_status)
+			
 
 
 if __name__ == '__main__':
@@ -567,8 +592,22 @@ if __name__ == '__main__':
 	#hilo_block = False
 
 
-	pd_dict = {'timestamp' : [0], 'i_part_number2' : [0], 'i_roll1_amp' : [0], 'i_roll1_volt' : [0], 'i_roll1_spd' : [0], 'i_roll1_reg_temp' : [0], 'i_roll2_amp' : [0], 'i_roll2_volt' : [0],'i_roll2_spd' : [0], 'i_roll2_reg_temp' : [0]}
+	pd_dict = {'timestamp' : [0], 'Q_Drawer_1_Back' : [0], 'Q_Drawer_2_Back' : [0], 'Q_Drawer_3_Back' : [0], 'Q_Drawer_4_Back' : [0], 
+			'Q_Drawer_1_Front' : [0], 'Q_Drawer_2_Front' : [0], 'Q_Drawer_3_Front' : [0],'Q_Drawer_4_Front' : [0], 'HM_Auto_Drawer_1_Back' : [0],
+			'HM_Auto_Drawer_2_Back' : [0], 'HM_Auto_Drawer_3_Back' : [0], 'HM_Auto_Drawer_4_Back' : [0],'HM_Auto_Drawer_1_Front' : [0], 'HM_Auto_Drawer_2_Front' : [0],
+			'HM_Auto_Drawer_3_Front' : [0], 'HM_Auto_Drawer_4_Front' : [0],'HM_Load_Auto_Buffer' : [0], 'HM_Unload_Auto_Buffer' : [0],
+			'TP_LM_Auto_Buffer_Drawer_Free_Level_1_Spot_1' : [0], 'TP_LM_Auto_Buffer_Drawer_Free_Level_1_Spot_2' : [0], 'TP_LM_Auto_Buffer_Drawer_Free_Level_1_Spot_3' : [0],'TP_LM_Auto_Buffer_Drawer_Free_Level_1_Spot_4' : [0],
+			'TP_LM_Auto_Buffer_Drawer_Free_Level_2_Spot_1' : [0], 'TP_LM_Auto_Buffer_Drawer_Free_Level_2_Spot_2' : [0], 'TP_LM_Auto_Buffer_Drawer_Free_Level_2_Spot_3' : [0], 'TP_LM_Auto_Buffer_Drawer_Free_Level_2_Spot_4' : [0],
+			'TP_LM_Auto_Buffer_Drawer_Free_Level_3_Spot_1' : [0], 'TP_LM_Auto_Buffer_Drawer_Free_Level_3_Spot_2' : [0], 'TP_LM_Auto_Buffer_Drawer_Free_Level_3_Spot_3' : [0], 'TP_LM_Auto_Buffer_Drawer_Free_Level_3_Spot_4' : [0],
+			'TP_LM_Auto_Buffer_Drawer_Free_Level_4_Spot_1' : [0], 'TP_LM_Auto_Buffer_Drawer_Free_Level_4_Spot_2' : [0], 'TP_LM_Auto_Buffer_Drawer_Free_Level_4_Spot_3' : [0], 'TP_LM_Auto_Buffer_Drawer_Free_Level_4_Spot_4' : [0]
+			
+			
+			
+			
+			
+			}
 
+	pd_dict2 = {'timestamp' : [0], 'buffer' : [0]}
 
 # The three queues:
 	PLC_1_queue_i = Queue()
@@ -586,11 +625,11 @@ if __name__ == '__main__':
 	shutdown_queue = Queue()
 
 	# Var definition:
-	plc1_netid =  '10.65.96.73.1.1'
+	plc1_netid =  '10.51.32.7.1.1'
 	plc2_netid =  '10.65.96.40.1.1'
 	#plc3_netid =  '10.65.96.88.1.1'
 	#plc_torre_netid = '10.65.68.130.1.1'
-	plc1_ip =  '10.65.96.73'
+	plc1_ip =  '10.51.32.7'
 	plc2_ip =  '10.65.96.40'
 	#plc3_ip =  '10.65.96.88'
 	#plc_torre_ip = '10.65.68.130'

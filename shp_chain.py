@@ -43,7 +43,7 @@ def write_log(i_part_number2,i_roll1_amp,i_roll1_volt,i_roll1_spd,i_roll1_reg_te
 	dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
 	#print("date and time =", dt_string)	
 	mis_docs = My_Documents(5)
-	pd_ruta = str(mis_docs)+ r"\registro_shp1.csv"
+	pd_ruta = str(mis_docs)+ r"\registro_shp1_chain.csv"
 	pd_file_exists = os.path.exists(pd_ruta)
 	
 	#check if pandas DataFrame exists to load the stuff or to create with dummy data.
@@ -53,7 +53,7 @@ def write_log(i_part_number2,i_roll1_amp,i_roll1_volt,i_roll1_spd,i_roll1_reg_te
 		pd_log = pd.DataFrame(pd_dict)
 	
 
-	new_row = {'timestamp' : [dt_string], 'i_part_number2' : [i_part_number2], 'i_roll1_amp' : [i_roll1_amp], 'i_roll1_volt' : [i_roll1_volt], 'i_roll1_spd' : [i_roll1_spd], 'i_roll1_reg_temp' : [i_roll1_reg_temp], 'i_roll2_amp' : [i_roll2_amp], 'i_roll2_volt' : [i_roll2_volt],'i_roll2_spd' : [i_roll2_spd], 'i_roll2_reg_temp' : [i_roll2_reg_temp]}
+	new_row = {'timestamp' : [dt_string], 'i_part_number2' : [i_part_number2], 'i_roll1_amp' : [i_roll1_amp], 'i_roll1_volt' : [i_roll1_volt], 'i_roll1_spd' : [i_roll1_spd], 'i_roll1_reg_temp' : [i_roll1_reg_temp], 'chain_speed' : [i_roll2_amp], 'i_roll2_volt' : [i_roll2_volt],'i_roll2_spd' : [i_roll2_spd], 'i_roll2_reg_temp' : [i_roll2_reg_temp]}
 	new_row_pd = pd.DataFrame(new_row)
 	pd_concat = pd.concat([pd_log,new_row_pd])
 	pd_concat.to_csv(pd_ruta,index=False)
@@ -99,21 +99,17 @@ def PLC_comms1(PLC_1_queue_i,PLC_1_queue_o,plc1_ip,plc1_netid):
 		plc1=pyads.Connection(plc1_netid,801,plc1_ip)
 		plc1.open()
 		plc1.set_timeout(2000)
-		roller1_amp = plc1.get_handle('.IW_Ausschub_Spur1_Ist_Strom_100mA_INT')
-		roller1_volt = plc1.get_handle('.IW_Tragrollenantrieb1_Ist_Spannung_INT')
-		roller1_spd = plc1.get_handle('.IW_Tragrollenantrieb1_Ist_Drehzahl_INT')	
-		roller1_reg_temp = plc1.get_handle('.IW_Tragrollenantrieb1_ReglerTemp_INT')
-
-		roller2_amp = plc1.get_handle('.IW_Ausschub_Spur2_Ist_Strom_100mA_INT')
-		roller2_volt = plc1.get_handle('.IW_Tragrollenantrieb2_Ist_Spannung_INT')
-		roller2_spd = plc1.get_handle('.IW_Tragrollenantrieb2_Ist_Drehzahl_INT')	
-		roller2_reg_temp = plc1.get_handle('.IW_Tragrollenantrieb2_ReglerTemp_INT')
+		roller1_amp = plc1.get_handle('.IW_Mitnehmerkette_Ist_Strom_100mA_INT')
+		roller1_volt = plc1.get_handle('.IW_Mitnehmerkette_Ist_Spannung_INT')
+		roller1_spd = plc1.get_handle('.IW_Mitnehmerkette_Ist_Drehzahl_INT')	
+		roller1_reg_temp = plc1.get_handle('.IW_Mitnehmerkette_ReglerTemp_INT')
+		chain_speed = plc1.get_handle('.HM_SW_Mitnehmerkette_Geschwindigkeit_UINT')
 		
 
 	except Exception as e:
 			print(f"Starting error: {e}")
 			time.sleep(5)
-			plc1,roller1_amp,roller1_volt,roller1_spd,roller1_reg_temp,roller2_amp,roller2_volt,roller2_spd,roller2_reg_temp= aux_PLC_comms(plc1_ip,plc1_netid)
+			plc1,roller1_amp,roller1_volt,roller1_spd,roller1_reg_temp,chain_speed= aux_PLC_comms(plc1_ip,plc1_netid)
 	while True:
 		# get a unit of work
 		try:
@@ -129,10 +125,7 @@ def PLC_comms1(PLC_1_queue_i,PLC_1_queue_o,plc1_ip,plc1_netid):
 			plc1.release_handle(roller1_volt)
 			plc1.release_handle(roller1_spd)
 			plc1.release_handle(roller1_reg_temp)
-			plc1.release_handle(roller2_amp)
-			plc1.release_handle(roller2_volt)
-			plc1.release_handle(roller2_spd)
-			plc1.release_handle(roller2_reg_temp)
+			plc1.release_handle(chain_speed)
 			print(f"handles1 released")
 			plc1.close()
 			PLC_1_queue_i.task_done()
@@ -145,19 +138,16 @@ def PLC_comms1(PLC_1_queue_i,PLC_1_queue_o,plc1_ip,plc1_netid):
 			roll1_volt= plc1.read_by_name("", plc_datatype=pyads.PLCTYPE_INT,handle=roller1_volt)
 			roll1_spd= plc1.read_by_name("", plc_datatype=pyads.PLCTYPE_INT,handle=roller1_spd)
 			roll1_reg_temp= plc1.read_by_name("", plc_datatype=pyads.PLCTYPE_INT,handle=roller1_reg_temp)
+			chain_spd= plc1.read_by_name("", plc_datatype=pyads.PLCTYPE_UINT,handle=chain_speed)
+
 			
-			roll2_amp= plc1.read_by_name("", plc_datatype=pyads.PLCTYPE_INT,handle=roller2_amp)
-			roll2_volt= plc1.read_by_name("", plc_datatype=pyads.PLCTYPE_INT,handle=roller2_volt)
-			roll2_spd= plc1.read_by_name("", plc_datatype=pyads.PLCTYPE_INT,handle=roller2_spd)
-			roll2_reg_temp= plc1.read_by_name("", plc_datatype=pyads.PLCTYPE_INT,handle=roller2_reg_temp)
-			
-			PLC_1_queue_o.put((roll1_amp,roll1_volt,roll1_spd,roll1_reg_temp,roll2_amp,roll2_volt,roll2_spd,roll2_reg_temp))
-			#time.sleep(0.1)
+			PLC_1_queue_o.put((roll1_amp,roll1_volt,roll1_spd,roll1_reg_temp,chain_spd))
+			time.sleep(4)
 
 
 		except Exception as e:
 			print(f"Could not update in PLC1: error {e}")
-			plc1,roller1_amp,roller1_volt,roller1_spd,roller1_reg_temp,roller2_amp,roller2_volt,roller2_spd,roller2_reg_temp = aux_PLC_comms(plc1_ip,plc1_netid)
+			plc1,roller1_amp,roller1_volt,roller1_spd,roller1_reg_temp,chain_speed = aux_PLC_comms(plc1_ip,plc1_netid)
 			continue
 
 
@@ -167,15 +157,11 @@ def aux_PLC_comms(plc_address_aux,plc_netid_aux):
 		try:
 			plc1=pyads.Connection(plc_netid_aux, 801,plc_address_aux)
 			plc1.open()
-			roller1_amp = plc1.get_handle('.IW_Ausschub_Spur1_Ist_Strom_100mA_INT')
-			roller1_volt = plc1.get_handle('.IW_Tragrollenantrieb1_Ist_Spannung_INT')
-			roller1_spd = plc1.get_handle('.IW_Tragrollenantrieb1_Ist_Drehzahl_INT')	
-			roller1_reg_temp = plc1.get_handle('.IW_Tragrollenantrieb1_ReglerTemp_INT')
-
-			roller2_amp = plc1.get_handle('.IW_Ausschub_Spur2_Ist_Strom_100mA_INT')
-			roller2_volt = plc1.get_handle('.IW_Tragrollenantrieb2_Ist_Spannung_INT')
-			roller2_spd = plc1.get_handle('.IW_Tragrollenantrieb2_Ist_Drehzahl_INT')	
-			roller2_reg_temp = plc1.get_handle('.IW_Tragrollenantrieb2_ReglerTemp_INT')
+			roller1_amp = plc1.get_handle('.IW_Mitnehmerkette_Ist_Strom_100mA_INT')
+			roller1_volt = plc1.get_handle('.IW_Mitnehmerkette_Ist_Spannung_INT')
+			roller1_spd = plc1.get_handle('.IW_Mitnehmerkette_Ist_Drehzahl_INT')	
+			roller1_reg_temp = plc1.get_handle('.IW_Mitnehmerkette_ReglerTemp_INT')
+			chain_speed = plc1.get_handle('.HM_SW_Mitnehmerkette_Geschwindigkeit_UINT')
 		except:	
 			print(f"Auxiliary PLC_1: Couldn't open")
 			time.sleep(4)
@@ -183,7 +169,7 @@ def aux_PLC_comms(plc_address_aux,plc_netid_aux):
 		else:
 			plc1.open()
 			print("Success PLC_L1")
-			return plc1,roller1_amp,roller1_volt,roller1_spd,roller1_reg_temp,roller2_amp,roller2_volt,roller2_spd,roller2_reg_temp
+			return plc1,roller1_amp,roller1_volt,roller1_spd,roller1_reg_temp,chain_speed
 
 
 
@@ -492,13 +478,11 @@ def weather_data(PLC_5_queue_i,PLC_5_queue_o):
 
 def process_coordinator():
 
-	i_roll1_amp,i_roll1_volt,i_roll1_spd,i_roll1_reg_temp,i_roll2_amp,i_roll2_volt,i_roll2_spd,i_roll2_reg_temp = 0,0,0,0,0,0,0,0
+	i_roll1_amp,i_roll1_volt,i_roll1_spd,i_roll1_reg_temp,i_chain_speed = 0,0,0,0,0
 	i_part_number2 = 's'
 	
 	while True:
-		
-		
-		#time.sleep(0.7)
+		time.sleep(3.1)
 		try:
 			item = shutdown_queue.get(block=False)
 		except:
@@ -508,10 +492,10 @@ def process_coordinator():
 				print("Closing thread")
 				shutdown_queue.task_done()
 				break
-		#if PLC_1_queue_o.qsize()>0:
-		i_roll1_amp,i_roll1_volt,i_roll1_spd,i_roll1_reg_temp,i_roll2_amp,i_roll2_volt,i_roll2_spd,i_roll2_reg_temp = PLC_1_queue_o.get(block=True)
-		PLC_1_queue_o.task_done()
-		print(f"recibido de L1: {PLC_1_queue_o.qsize()}")
+		if PLC_1_queue_o.qsize()>0:
+			i_roll1_amp,i_roll1_volt,i_roll1_spd,i_roll1_reg_temp,i_chain_speed = PLC_1_queue_o.get(block=False)
+			PLC_1_queue_o.task_done()
+			print("recibido de L1")
 			#i_gwk_temp,i_part_number,status1 = 0,'0','0'
 		
 		if PLC_2_queue_o.qsize()>0:
@@ -536,11 +520,11 @@ def process_coordinator():
 			print("recibido de L5")
 		"""
 
-		print(f"Info recibida {i_roll1_amp} {i_part_number2} {i_roll2_amp}")
+		print(f"Info recibida {i_roll1_amp} {i_chain_speed} Remaining {PLC_1_queue_o.qsize()}")
 		#print(f"Stats de las queue output {PLC_1_queue_o.qsize()}, {PLC_2_queue_o.qsize()},{PLC_3_queue_o.qsize()},{PLC_4_queue_o.qsize()},{PLC_5_queue_o.qsize()}")
 
 		if opt.save_data:
-			write_log(i_part_number2,i_roll1_amp,i_roll1_volt,i_roll1_spd,i_roll1_reg_temp,i_roll2_amp,i_roll2_volt,i_roll2_spd,i_roll2_reg_temp )
+			write_log(i_part_number2,i_roll1_amp,i_roll1_volt,i_roll1_spd,i_roll1_reg_temp,i_chain_speed,0,0,0)
 
 
 
@@ -567,7 +551,7 @@ if __name__ == '__main__':
 	#hilo_block = False
 
 
-	pd_dict = {'timestamp' : [0], 'i_part_number2' : [0], 'i_roll1_amp' : [0], 'i_roll1_volt' : [0], 'i_roll1_spd' : [0], 'i_roll1_reg_temp' : [0], 'i_roll2_amp' : [0], 'i_roll2_volt' : [0],'i_roll2_spd' : [0], 'i_roll2_reg_temp' : [0]}
+	pd_dict = {'timestamp' : [0], 'i_part_number2' : [0], 'i_roll1_amp' : [0], 'i_roll1_volt' : [0], 'i_roll1_spd' : [0], 'i_roll1_reg_temp' : [0], 'chain_speed' : [0], 'i_roll2_volt' : [0],'i_roll2_spd' : [0], 'i_roll2_reg_temp' : [0]}
 
 
 # The three queues:
@@ -586,11 +570,11 @@ if __name__ == '__main__':
 	shutdown_queue = Queue()
 
 	# Var definition:
-	plc1_netid =  '10.65.96.73.1.1'
+	plc1_netid =  '10.65.96.41.1.1'
 	plc2_netid =  '10.65.96.40.1.1'
 	#plc3_netid =  '10.65.96.88.1.1'
 	#plc_torre_netid = '10.65.68.130.1.1'
-	plc1_ip =  '10.65.96.73'
+	plc1_ip =  '10.65.96.41'
 	plc2_ip =  '10.65.96.40'
 	#plc3_ip =  '10.65.96.88'
 	#plc_torre_ip = '10.65.68.130'
